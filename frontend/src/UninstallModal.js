@@ -40,10 +40,8 @@ function UninstallModal({ open, onClose, packageName, onUninstallSuccess }) {
         setResult(data);
         if (data.isSuccess && onUninstallSuccess) {
           onUninstallSuccess();
-          // Auto-close after successful uninstall
-          setTimeout(() => {
-            handleClose();
-          }, 2000); // Close after 2 seconds
+          // Immediately close modal on success
+          handleClose();
         }
       } else {
         setError(data.errorMessage || 'Failed to uninstall package');
@@ -138,7 +136,7 @@ function UninstallModal({ open, onClose, packageName, onUninstallSuccess }) {
             {result.isSuccess && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 <Typography variant="body2">
-                  The package has been successfully removed from your system. This dialog will close automatically in a few seconds.
+                  The package has been successfully removed from your system.
                 </Typography>
               </Alert>
             )}
