@@ -42,7 +42,7 @@ function InstallModal({ open, onClose, packageName, onInstallSuccess }) {
       if (response.ok) {
         setResult(data);
         if (data.isSuccess && onInstallSuccess) {
-          onInstallSuccess();
+          onInstallSuccess(packageName);
         }
       } else {
         setError(data.errorMessage || 'Failed to install package');

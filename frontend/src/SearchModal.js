@@ -16,7 +16,7 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import PackageList from './PackageList';
 import InstallModal from './InstallModal';
 
-function SearchModal({ open, onClose, onPackageClick, installedPackages = [], onRefreshInstalledPackages }) {
+function SearchModal({ open, onClose, onPackageClick, installedPackages = [], onRefreshInstalledPackages, onInstallSuccess }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -79,11 +79,15 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [], on
     }
   };
 
-  const handleInstallSuccess = () => {
+  const handleInstallSuccess = (packageName) => {
     console.log('Install success, current query:', query);
     // Refresh the installed packages list from parent
     if (onRefreshInstalledPackages) {
       onRefreshInstalledPackages();
+    }
+    // Call parent install success handler
+    if (onInstallSuccess) {
+      onInstallSuccess(packageName);
     }
     // Close the search modal and return to main view
     handleClose();

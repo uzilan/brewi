@@ -11,7 +11,8 @@ import {
   Button,
   AppBar,
   Toolbar,
-  Chip
+  Chip,
+  Snackbar
 } from '@mui/material';
 import { Refresh as RefreshIcon, Search as SearchIcon, Update as UpdateIcon } from '@mui/icons-material';
 import PackageInfoDialog from './PackageInfoDialog';
@@ -35,6 +36,9 @@ function App() {
   const [selectedPackageForUninstall, setSelectedPackageForUninstall] = useState(null);
   const [filterValue, setFilterValue] = useState('');
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   useEffect(() => {
     fetchPackages();
@@ -81,6 +85,12 @@ function App() {
   const handleRefresh = async () => {
     await fetchPackages();
     await fetchLastUpdateTime();
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
   };
 
   const fetchPackageInfo = async (packageName) => {
@@ -140,6 +150,12 @@ function App() {
 
   const handleUninstallSuccess = () => {
     fetchPackages();
+    showSnackbar(`Successfully uninstalled ${selectedPackageForUninstall?.name}`, 'success');
+  };
+
+  const handleInstallSuccess = (packageName) => {
+    fetchPackages();
+    showSnackbar(`Successfully installed ${packageName}`, 'success');
   };
 
   const handleFilterChange = (value) => {
@@ -272,6 +288,7 @@ function App() {
           onPackageClick={handlePackageClick}
           installedPackages={packages}
           onRefreshInstalledPackages={fetchPackages}
+          onInstallSuccess={handleInstallSuccess}
         />
 
                 <UpdateUpgradeModal 
@@ -286,6 +303,21 @@ function App() {
           packageName={selectedPackageForUninstall?.name}
           onUninstallSuccess={handleUninstallSuccess}
         />
+
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={4000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={() => setSnackbarOpen(false)} 
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   );
