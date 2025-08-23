@@ -98,6 +98,8 @@ function App() {
     // Clear cache since package information might have changed
     // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
+    setDependencyMap(new Map());
+    setDependentsMap(new Map());
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -142,7 +144,28 @@ function App() {
         return newCache;
       });
       
-      // Note: Dependency maps will be updated by buildDependencyMaps after prefetching
+      // Update dependency maps for this package
+      setDependencyMap(prevDependencyMap => {
+        const newDependencyMap = new Map(prevDependencyMap);
+        if (data.dependencies) {
+          const dependencies = new Set(data.dependencies);
+          newDependencyMap.set(packageName, dependencies);
+        }
+        return newDependencyMap;
+      });
+      
+      setDependentsMap(prevDependentsMap => {
+        const newDependentsMap = new Map(prevDependentsMap);
+        if (data.dependencies) {
+          // Update dependents map for each dependency
+          data.dependencies.forEach(dep => {
+            const currentDependents = newDependentsMap.get(dep) || new Set();
+            currentDependents.add(packageName);
+            newDependentsMap.set(dep, currentDependents);
+          });
+        }
+        return newDependentsMap;
+      });
       
       if (showInUI) {
         // Enhance with cross-referenced dependents
@@ -166,88 +189,25 @@ function App() {
 
 
 
-  const buildDependencyMapsFromData = useCallback((packagesList, prefetchedData) => {
-    const newDependencyMap = new Map();
-    const newDependentsMap = new Map();
-    
-    // Initialize dependents map for all packages
-    packagesList.forEach(pkg => {
-      newDependentsMap.set(pkg.name, new Set());
-    });
-    
-    // Build dependency map from prefetched data
-    packagesList.forEach(pkg => {
-      const packageData = prefetchedData.get(pkg.name);
-      if (packageData && packageData.dependencies) {
-        const dependencies = new Set(packageData.dependencies);
-        newDependencyMap.set(pkg.name, dependencies);
-        
-        // Update dependents map
-        dependencies.forEach(dep => {
-          const currentDependents = newDependentsMap.get(dep) || new Set();
-          currentDependents.add(pkg.name);
-          newDependentsMap.set(dep, currentDependents);
-        });
-      } else {
-        newDependencyMap.set(pkg.name, new Set());
-      }
-    });
-    
-    setDependencyMap(newDependencyMap);
-    setDependentsMap(newDependentsMap);
-  }, []);
 
-  const buildDependencyMaps = useCallback((packagesList) => {
-    const newDependencyMap = new Map();
-    const newDependentsMap = new Map();
-    
-    console.log('Building dependency maps...', new Date().toISOString(), 'for', packagesList.length, 'packages');
-    
-    // Initialize dependents map for all packages
-    packagesList.forEach(pkg => {
-      newDependentsMap.set(pkg.name, new Set());
-    });
-    
-    console.log('Cache size when building maps:', packageInfoCache.size);
-    
-    // Build dependency map from cached package info
-    packagesList.forEach(pkg => {
-      const cachedInfo = packageInfoCache.get(pkg.name);
-      if (cachedInfo && cachedInfo.dependencies) {
-        const dependencies = new Set(cachedInfo.dependencies);
-        newDependencyMap.set(pkg.name, dependencies);
-        console.log(`${pkg.name}: ${dependencies.size} dependencies`);
-        
-        // Update dependents map
-        dependencies.forEach(dep => {
-          const currentDependents = newDependentsMap.get(dep) || new Set();
-          currentDependents.add(pkg.name);
-          newDependentsMap.set(dep, currentDependents);
-        });
-      } else {
-        newDependencyMap.set(pkg.name, new Set());
-        console.log(`${pkg.name}: no cached info or no dependencies`);
-      }
-    });
-    
-    console.log('Setting dependency maps - new size:', newDependencyMap.size, 'at', new Date().toISOString());
-    setDependencyMap(newDependencyMap);
-    setDependentsMap(newDependentsMap);
-    
-    console.log(`Dependency maps built: ${newDependencyMap.size} packages`);
-    console.log(`Dependents map size: ${newDependentsMap.size}`);
-    
-    // Debug: Check if maps have any data
-    let totalDeps = 0;
-    newDependencyMap.forEach((deps, pkg) => {
-      totalDeps += deps.size;
-    });
-    console.log(`Total dependencies across all packages: ${totalDeps}`);
-  }, [packageInfoCache]);
+
+
 
 
 
   const prefetchAllPackageInfo = useCallback(async (packagesList) => {
+    // Initialize dependency maps with empty sets for all packages
+    const initialDependencyMap = new Map();
+    const initialDependentsMap = new Map();
+    
+    packagesList.forEach(pkg => {
+      initialDependencyMap.set(pkg.name, new Set());
+      initialDependentsMap.set(pkg.name, new Set());
+    });
+    
+    setDependencyMap(initialDependencyMap);
+    setDependentsMap(initialDependentsMap);
+    
     // Prefetch all package info in background with staggered requests
     const prefetchPromises = packagesList.map((pkg, index) => 
       new Promise(async (resolve) => {
@@ -257,12 +217,37 @@ function App() {
             const response = await fetch(`/api/packages/${pkg.name}`);
             if (response.ok) {
               const data = await response.json();
+              
               // Cache the package info
               setPackageInfoCache(prevCache => {
                 const newCache = new Map(prevCache);
                 newCache.set(pkg.name, data);
                 return newCache;
               });
+              
+              // Update dependency maps incrementally as each package is fetched
+              setDependencyMap(prevDependencyMap => {
+                const newDependencyMap = new Map(prevDependencyMap);
+                if (data.dependencies) {
+                  const dependencies = new Set(data.dependencies);
+                  newDependencyMap.set(pkg.name, dependencies);
+                }
+                return newDependencyMap;
+              });
+              
+              setDependentsMap(prevDependentsMap => {
+                const newDependentsMap = new Map(prevDependentsMap);
+                if (data.dependencies) {
+                  // Update dependents map for each dependency
+                  data.dependencies.forEach(dep => {
+                    const currentDependents = newDependentsMap.get(dep) || new Set();
+                    currentDependents.add(pkg.name);
+                    newDependentsMap.set(dep, currentDependents);
+                  });
+                }
+                return newDependentsMap;
+              });
+              
               resolve({ packageName: pkg.name, data });
             } else {
               resolve({ packageName: pkg.name, error: 'Failed to fetch' });
@@ -278,17 +263,7 @@ function App() {
     Promise.allSettled(prefetchPromises).then(results => {
       const successful = results.filter(result => result.status === 'fulfilled').length;
       const failed = results.filter(result => result.status === 'rejected').length;
-      
-      // Collect all successful prefetched data
-      const prefetchedData = new Map();
-      results.forEach(result => {
-        if (result.status === 'fulfilled' && result.value.data) {
-          prefetchedData.set(result.value.packageName, result.value.data);
-        }
-      });
-      
-      // Build dependency maps directly from prefetched data
-      buildDependencyMapsFromData(packagesList, prefetchedData);
+      console.log(`Prefetch completed: ${successful} successful, ${failed} failed`);
     });
   }, []);
 
@@ -350,6 +325,8 @@ function App() {
     // Clear cache since dependencies might have changed
     // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
+    setDependencyMap(new Map());
+    setDependentsMap(new Map());
     showSnackbar(`Successfully uninstalled ${packageName}`, 'success');
   };
 
@@ -358,6 +335,8 @@ function App() {
     // Clear cache since dependencies might have changed
     // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
+    setDependencyMap(new Map());
+    setDependentsMap(new Map());
     showSnackbar(`Successfully installed ${packageName}`, 'success');
   };
 
@@ -479,6 +458,7 @@ function App() {
           onDependencyClick={handleDependencyClick}
           dependencyMap={dependencyMap}
           dependentsMap={dependentsMap}
+          packageInfoCache={packageInfoCache}
         />
 
         <PackageInfoDialog
@@ -517,50 +497,6 @@ function App() {
         />
 
         </Box>
-
-                        {/* Debug Panel - Cached Packages */}
-                <Box sx={{ width: 300, px: 2, borderLeft: 1, borderColor: 'divider' }}>
-                  <Typography variant="h6" gutterBottom>
-                    Debug: Cached Packages
-                  </Typography>
-                  <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip
-                      label={`${packageInfoCache.size} cached`}
-                      color="info"
-                      variant="outlined"
-                      size="small"
-                    />
-                    <Chip
-                      label={`${dependencyMap.size} deps`}
-                      color="primary"
-                      variant="outlined"
-                      size="small"
-                    />
-                    <Chip
-                      label={`${dependentsMap.size} dependents`}
-                      color="secondary"
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Box>
-                  <Box sx={{ maxHeight: '70vh', overflow: 'auto' }}>
-                    {Array.from(packageInfoCache.keys()).map((packageName) => (
-                      <Chip
-                        key={packageName}
-                        label={packageName}
-                        size="small"
-                        variant="outlined"
-                        sx={{ m: 0.5 }}
-                        color="success"
-                      />
-                    ))}
-                    {packageInfoCache.size === 0 && (
-                      <Typography variant="body2" color="text.secondary">
-                        No packages cached yet
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
       </Box>
 
       <Snackbar

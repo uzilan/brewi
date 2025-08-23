@@ -13,7 +13,7 @@ class BrewService {
      * Executes brew list command and returns structured result
      */
     fun listPackages(): BrewListResult {
-        val result = executeBrewCommand(listOf("list"))
+        val result = executeBrewCommand(listOf("list", "--versions"))
 
         return if (result.isSuccess) {
             val packages = parseBrewOutput(result.output)
@@ -41,44 +41,7 @@ class BrewService {
      * Executes brew info command for a specific package
      */
     fun getPackageInfo(packageName: String): BrewCommandResult {
-        return executeBrewCommand(listOf("info", packageName))
-    }
-
-    /**
-     * Gets comprehensive package information including dependencies and dependents
-     */
-    fun getPackageInfoWithDependencies(packageName: String): model.BrewPackageInfo {
-        val infoResult = getPackageInfo(packageName)
-        val depsResult = getPackageDependencies(packageName)
-        val usesResult = getPackageDependents(packageName)
-
-        // Parse dependencies and dependents
-        val dependencies =
-            if (depsResult.isSuccess) {
-                depsResult.output.lines()
-                    .filter { it.isNotBlank() }
-                    .map { it.trim() }
-            } else {
-                emptyList()
-            }
-
-        val dependents =
-            if (usesResult.isSuccess) {
-                usesResult.output.lines()
-                    .filter { it.isNotBlank() }
-                    .map { it.trim() }
-            } else {
-                emptyList()
-            }
-
-        return model.BrewPackageInfo(
-            name = packageName,
-            output = infoResult.output,
-            isSuccess = infoResult.isSuccess,
-            errorMessage = infoResult.errorMessage,
-            dependencies = dependencies,
-            dependents = dependents,
-        )
+        return executeBrewCommand(listOf("info", packageName), 60) // 1 minute timeout for info
     }
 
     /**
@@ -139,6 +102,16 @@ class BrewService {
             }
         }
 
+        // Extract description from brew info output
+        println("DEBUG: About to extract description for $packageName")
+        println("DEBUG: infoResult.isSuccess: ${infoResult.isSuccess}")
+        val description = if (infoResult.isSuccess) {
+            extractDescriptionFromInfoOutput(packageName, infoResult.output)
+        } else {
+            null
+        }
+        println("DEBUG: Final description result: $description")
+
         return model.BrewPackageInfo(
             name = packageName,
             output = infoResult.output,
@@ -146,6 +119,7 @@ class BrewService {
             errorMessage = infoResult.errorMessage,
             dependencies = dependencies,
             dependents = enhancedDependents.toList(),
+            description = description,
         )
     }
 
@@ -175,6 +149,49 @@ class BrewService {
      */
     fun getPackageDependents(packageName: String): BrewCommandResult {
         return executeBrewCommand(listOf("uses", packageName))
+    }
+
+    /**
+     * Extracts description from brew info output
+     * The description is the line that comes after the package name and version line
+     * Example: "==> node: stable 24.6.0 (bottled), HEAD"
+     *         "Platform built on V8 to build network applications" <- This is the description
+     */
+    private fun extractDescriptionFromInfoOutput(
+        packageName: String,
+        output: String,
+    ): String? {
+        if (output.isBlank()) {
+            return null
+        }
+
+        val lines = output.lines()
+        if (lines.isEmpty()) {
+            return null
+        }
+
+        // Find the line that starts with "==> $packageName:"
+        val packageInfoLineIndex = lines.indexOfFirst { line ->
+            line.trim().startsWith("==> $packageName:")
+        }
+
+        if (packageInfoLineIndex == -1 || packageInfoLineIndex + 1 >= lines.size) {
+            return null
+        }
+
+        // The description is the next line after the package info line
+        val descriptionLine = lines[packageInfoLineIndex + 1].trim()
+        
+        // Skip if the next line is empty or starts with common non-description patterns
+        if (descriptionLine.isBlank() || 
+            descriptionLine.startsWith("http") ||
+            descriptionLine.startsWith("From:") ||
+            descriptionLine.startsWith("License:") ||
+            descriptionLine.startsWith("==>")) {
+            return null
+        }
+
+        return descriptionLine
     }
 
     /**
@@ -350,12 +367,12 @@ class BrewService {
         return output.lines()
             .filter { it.isNotBlank() }
             .map { line ->
-                // Parse package name and potentially version if available
+                // Parse package name and version from "brew list --versions" output
+                // Format: "package_name version" (e.g., "python 3.9.0")
                 val trimmed = line.trim()
-                if (trimmed.contains("@")) {
-                    // Handle versioned packages like "python@3.9"
-                    val parts = trimmed.split("@", limit = 2)
-                    BrewPackage(name = parts[0], version = parts.getOrNull(1))
+                val parts = trimmed.split(" ", limit = 2)
+                if (parts.size > 1) {
+                    BrewPackage(name = parts[0], version = parts[1])
                 } else {
                     BrewPackage(name = trimmed)
                 }

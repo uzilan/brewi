@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Typography,
   Card,
@@ -10,13 +10,33 @@ import {
 } from '@mui/material';
 import { CheckCircle as CheckCircleIcon, Download as DownloadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
-function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClick, onDependencyClick, dependencyMap, dependentsMap }) {
+function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClick, onDependencyClick, dependencyMap, dependentsMap, packageInfoCache }) {
+  const [hoveredPackage, setHoveredPackage] = useState(null);
   const getDependencies = (packageName) => {
     return dependencyMap?.get(packageName) || new Set();
   };
 
   const getDependents = (packageName) => {
     return dependentsMap?.get(packageName) || new Set();
+  };
+
+  const getHighlightInfo = (packageName) => {
+    if (!hoveredPackage) return null;
+    
+    const hoveredDependencies = getDependencies(hoveredPackage);
+    const hoveredDependents = getDependents(hoveredPackage);
+    
+    // Check if this package is a dependency of the hovered package
+    if (hoveredDependencies.has(packageName)) {
+      return { type: 'dependency', color: 'rgba(25, 118, 210, 0.08)' };
+    }
+    
+    // Check if this package is a dependent of the hovered package
+    if (hoveredDependents.has(packageName)) {
+      return { type: 'dependent', color: 'rgba(156, 39, 176, 0.08)' };
+    }
+    
+    return null;
   };
 
   if (packages.length === 0) {
@@ -30,30 +50,45 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
   }
 
   return (
-    <Grid container spacing={3}>
+    <Box sx={{ 
+      display: 'grid', 
+      gridTemplateColumns: { 
+        xs: '1fr', 
+        sm: 'repeat(2, 1fr)', 
+        md: 'repeat(5, 1fr)' 
+      }, 
+      gap: 2 
+    }}>
       {packages.map((pkg, index) => {
         const dependencies = getDependencies(pkg.name);
         const dependents = getDependents(pkg.name);
+        const highlightInfo = getHighlightInfo(pkg.name);
+        const cachedInfo = packageInfoCache?.get(pkg.name);
+        const description = cachedInfo?.description;
         
         return (
-          <Grid key={index} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%', lg: '25%' } }}>
             <Card 
+              key={index}
               onClick={() => onPackageClick(pkg)}
+              onMouseEnter={() => setHoveredPackage(pkg.name)}
+              onMouseLeave={() => setHoveredPackage(null)}
               sx={{ 
                 height: '100%',
-                transition: 'transform 0.2s',
+                transition: 'all 0.3s ease',
                 cursor: 'pointer',
+                backgroundColor: highlightInfo ? highlightInfo.color : 'background.paper',
+                border: highlightInfo ? `1px solid ${highlightInfo.type === 'dependency' ? 'rgba(25, 118, 210, 0.3)' : 'rgba(156, 39, 176, 0.3)'}` : '1px solid transparent',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: 3
                 }
               }}
             >
-              <CardContent>
+              <CardContent sx={{ p: 1.5 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Typography variant="h6" component="h3">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <Typography variant="subtitle1" component="h3" sx={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
                         {pkg.name}
                       </Typography>
                       {pkg.isInstalled && (
@@ -62,21 +97,28 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
                           size="small"
                           color="success"
                           icon={<CheckCircleIcon />}
-                          sx={{ fontSize: '0.75rem', height: 20 }}
+                          sx={{ fontSize: '0.7rem', height: 18 }}
                         />
                       )}
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Version: {pkg.version || 'N/A'}
-                    </Typography>
+                    {description && (
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', mb: 1, lineHeight: 1.2, display: 'block' }}>
+                        {description}
+                      </Typography>
+                    )}
+                    {pkg.version && (
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '0.7rem', mb: 0.5, display: 'block' }}>
+                        Version: {pkg.version}
+                      </Typography>
+                    )}
 
                     {/* Dependencies Section */}
                     {dependencies.size > 0 && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}>
                           Dependencies ({dependencies.size}):
                         </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3, mt: 0.3 }}>
                           {Array.from(dependencies).slice(0, 3).map((dep, idx) => (
                             <Chip
                               key={idx}
@@ -85,8 +127,8 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
                               variant="outlined"
                               color="primary"
                               sx={{ 
-                                fontSize: '0.7rem', 
-                                height: 18,
+                                fontSize: '0.65rem', 
+                                height: 16,
                                 cursor: 'pointer',
                                 '&:hover': {
                                   backgroundColor: 'primary.light',
@@ -107,7 +149,7 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
                               size="small"
                               variant="outlined"
                               color="primary"
-                              sx={{ fontSize: '0.7rem', height: 18 }}
+                              sx={{ fontSize: '0.65rem', height: 16 }}
                             />
                           )}
                         </Box>
@@ -116,11 +158,11 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
 
                     {/* Dependents Section */}
                     {dependents.size > 0 && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}>
                           Dependents ({dependents.size}):
                         </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3, mt: 0.3 }}>
                           {Array.from(dependents).slice(0, 3).map((dep, idx) => (
                             <Chip
                               key={idx}
@@ -158,12 +200,7 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
                       </Box>
                     )}
 
-                    {/* No dependencies/dependents message */}
-                    {dependencies.size === 0 && dependents.size === 0 && (
-                      <Typography variant="caption" color="text.secondary">
-                        No dependencies or dependents
-                      </Typography>
-                    )}
+
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     {!pkg.isInstalled && onInstallClick && (
@@ -205,10 +242,9 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
                 </Box>
               </CardContent>
             </Card>
-          </Grid>
         );
       })}
-    </Grid>
+    </Box>
   );
 }
 

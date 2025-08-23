@@ -57,7 +57,7 @@ object ApplicationServer {
                     return@get
                 }
                 log.info("Get package info endpoint hit for package: $packageName")
-                val result = brewService.getPackageInfoWithDependencies(packageName)
+                val result = brewService.getPackageInfoWithDependencies(packageName, emptyList())
                 call.respond(result)
             }
 
