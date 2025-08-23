@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -39,6 +39,7 @@ function App() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [packageInfoCache, setPackageInfoCache] = useState(new Map());
 
   useEffect(() => {
     fetchPackages();
@@ -85,6 +86,8 @@ function App() {
   const handleRefresh = async () => {
     await fetchPackages();
     await fetchLastUpdateTime();
+    // Clear cache since package information might have changed
+    setPackageInfoCache(new Map());
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -93,7 +96,14 @@ function App() {
     setSnackbarOpen(true);
   };
 
-  const fetchPackageInfo = async (packageName) => {
+  const fetchPackageInfo = useCallback(async (packageName) => {
+    // Check if we have cached data for this package
+    if (packageInfoCache.has(packageName)) {
+      const cachedInfo = packageInfoCache.get(packageName);
+      setPackageInfo(cachedInfo);
+      return;
+    }
+
     try {
       setPackageInfoLoading(true);
       setPackageInfoError(null);
@@ -102,6 +112,14 @@ function App() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
+      
+      // Cache the package info
+      setPackageInfoCache(prevCache => {
+        const newCache = new Map(prevCache);
+        newCache.set(packageName, data);
+        return newCache;
+      });
+      
       setPackageInfo(data);
     } catch (err) {
       setPackageInfoError(err.message);
@@ -109,7 +127,7 @@ function App() {
     } finally {
       setPackageInfoLoading(false);
     }
-  };
+  }, [packageInfoCache]);
 
   const handlePackageClick = (pkg) => {
     setSelectedPackage(pkg);
@@ -150,11 +168,15 @@ function App() {
 
   const handleUninstallSuccess = () => {
     fetchPackages();
+    // Clear cache since dependencies might have changed
+    setPackageInfoCache(new Map());
     showSnackbar(`Successfully uninstalled ${selectedPackageForUninstall?.name}`, 'success');
   };
 
   const handleInstallSuccess = (packageName) => {
     fetchPackages();
+    // Clear cache since dependencies might have changed
+    setPackageInfoCache(new Map());
     showSnackbar(`Successfully installed ${packageName}`, 'success');
   };
 
