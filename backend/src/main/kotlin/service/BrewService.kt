@@ -80,6 +80,68 @@ class BrewService {
             dependents = dependents
         )
     }
+
+    /**
+     * Gets comprehensive package information including dependencies and dependents,
+     * cross-referencing with installed packages to improve dependents accuracy
+     */
+    fun getPackageInfoWithDependencies(packageName: String, installedPackages: List<String>): model.BrewPackageInfo {
+        val infoResult = getPackageInfo(packageName)
+        val depsResult = getPackageDependencies(packageName)
+        val usesResult = getPackageDependents(packageName)
+        
+        // Parse dependencies and dependents
+        val dependencies = if (depsResult.isSuccess) {
+            depsResult.output.lines()
+                .filter { it.isNotBlank() }
+                .map { it.trim() }
+        } else {
+            emptyList()
+        }
+        
+        val dependents = if (usesResult.isSuccess) {
+            usesResult.output.lines()
+                .filter { it.isNotBlank() }
+                .map { it.trim() }
+        } else {
+            emptyList()
+        }
+        
+        // Cross-reference with installed packages to find additional dependents
+        val enhancedDependents = mutableSetOf<String>()
+        enhancedDependents.addAll(dependents)
+        
+        // For each installed package, check if it depends on this package
+        for (installedPackage in installedPackages) {
+            if (installedPackage != packageName) {
+                try {
+                    val installedDepsResult = getPackageDependencies(installedPackage)
+                    if (installedDepsResult.isSuccess) {
+                        val installedDeps = installedDepsResult.output.lines()
+                            .filter { it.isNotBlank() }
+                            .map { it.trim() }
+                        
+                        // If this installed package depends on the current package, add it to dependents
+                        if (installedDeps.contains(packageName)) {
+                            enhancedDependents.add(installedPackage)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Skip this package if there's an error checking its dependencies
+                    continue
+                }
+            }
+        }
+        
+        return model.BrewPackageInfo(
+            name = packageName,
+            output = infoResult.output,
+            isSuccess = infoResult.isSuccess,
+            errorMessage = infoResult.errorMessage,
+            dependencies = dependencies,
+            dependents = enhancedDependents.toList()
+        )
+    }
     
     /**
      * Executes brew install command for a specific package
