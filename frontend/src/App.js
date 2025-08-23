@@ -31,10 +31,26 @@ function App() {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [updateUpgradeModalOpen, setUpdateUpgradeModalOpen] = useState(false);
   const [filterValue, setFilterValue] = useState('');
+  const [lastUpdateTime, setLastUpdateTime] = useState(null);
 
   useEffect(() => {
     fetchPackages();
+    fetchLastUpdateTime();
   }, []);
+
+  const fetchLastUpdateTime = async () => {
+    try {
+      const response = await fetch('/api/packages/last-update');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.isSuccess) {
+          setLastUpdateTime(data.output);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch last update time:', err);
+    }
+  };
 
   const fetchPackages = async () => {
     try {
@@ -52,6 +68,11 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    await fetchPackages();
+    await fetchLastUpdateTime();
   };
 
   const fetchPackageInfo = async (packageName) => {
@@ -145,7 +166,7 @@ function App() {
           <Button 
             color="inherit" 
             startIcon={<RefreshIcon />}
-            onClick={fetchPackages}
+            onClick={handleRefresh}
             disabled={loading}
           >
             Refresh
@@ -165,11 +186,21 @@ function App() {
             <Typography variant="h4" component="h1" gutterBottom>
               Installed Packages
             </Typography>
-            <Chip 
-              label={`${packages.length} packages`} 
-              color="primary" 
-              variant="outlined"
-            />
+            <Box display="flex" gap={1} alignItems="center">
+              <Chip 
+                label={`${packages.length} packages`} 
+                color="primary" 
+                variant="outlined"
+              />
+              {lastUpdateTime && (
+                <Chip 
+                  label={`Last updated: ${lastUpdateTime}`}
+                  color="secondary"
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </Box>
           </Box>
           <Box display="flex" gap={1}>
             <Button
