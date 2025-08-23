@@ -14,12 +14,15 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import PackageList from './PackageList';
+import InstallModal from './InstallModal';
 
 function SearchModal({ open, onClose, onPackageClick, installedPackages = [] }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [installModalOpen, setInstallModalOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
   const inputRef = useRef(null);
 
   const handleSearch = async (e) => {
@@ -48,6 +51,18 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [] }) 
     setSearchResults(null);
     setSearchError(null);
     onClose();
+  };
+
+  const handleInstallClick = (pkg) => {
+    setSelectedPackage(pkg);
+    setInstallModalOpen(true);
+  };
+
+  const handleInstallSuccess = () => {
+    // Refresh the search results to update the installed status
+    if (query.trim()) {
+      handleSearch({ preventDefault: () => {} });
+    }
   };
 
   useEffect(() => {
@@ -179,7 +194,8 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [] }) 
             {parseSearchResults(searchResults).length > 0 ? (
               <PackageList 
                 packages={parseSearchResults(searchResults)} 
-                onPackageClick={handlePackageClick} 
+                onPackageClick={handlePackageClick}
+                onInstallClick={handleInstallClick}
               />
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -194,6 +210,13 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [] }) 
       <DialogActions>
         <Button onClick={handleClose}>Close</Button>
       </DialogActions>
+      
+      <InstallModal
+        open={installModalOpen}
+        onClose={() => setInstallModalOpen(false)}
+        packageName={selectedPackage?.name}
+        onInstallSuccess={handleInstallSuccess}
+      />
     </Dialog>
   );
 }

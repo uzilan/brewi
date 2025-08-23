@@ -149,6 +149,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrewCommandResult'
 
+  /api/packages/{packageName}/install:
+    post:
+      operationId: installPackage
+      summary: Install a package
+      description: Installs a package using the brew install command
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          description: Name of the package to install
+          schema:
+            type: string
+            example: "node"
+      responses:
+        '200':
+          description: Package installation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+        '400':
+          description: Bad request - package name is required
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Package name is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+
 components:
   schemas:
     BrewListResult:

@@ -84,6 +84,17 @@ object ApplicationServer {
                 call.respond(result)
             }
 
+            post("/api/packages/{packageName}/install") {
+                val packageName = call.parameters["packageName"]
+                if (packageName.isNullOrBlank()) {
+                    call.respondText("Package name is required", status = HttpStatusCode.BadRequest)
+                    return@post
+                }
+                log.info("Install package endpoint hit for package: $packageName")
+                val result = brewService.installPackage(packageName)
+                call.respond(result)
+            }
+
             get("/openapi/documentation.yaml") {
                 try {
                     val content =

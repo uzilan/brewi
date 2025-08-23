@@ -47,6 +47,13 @@ class BrewService {
     }
     
     /**
+     * Executes brew install command for a specific package
+     */
+    fun installPackage(packageName: String): BrewCommandResult {
+        return executeBrewCommand(listOf("install", packageName), 300) // 5 minute timeout for installs
+    }
+    
+    /**
      * Executes brew outdated command to check for updates
      */
     fun checkOutdated(): BrewCommandResult {
