@@ -91,8 +91,20 @@ object ApplicationServer {
                     return@post
                 }
                 log.info("Install package endpoint hit for package: $packageName")
-                val result = brewService.installPackage(packageName)
-                call.respond(result)
+                try {
+                    val result = brewService.installPackage(packageName)
+                    log.info("Install package result for $packageName: success=${result.isSuccess}, exitCode=${result.exitCode}")
+                    call.respond(result)
+                } catch (e: Exception) {
+                    log.error("Error installing package $packageName: ${e.message}", e)
+                    val errorResult = model.BrewCommandResult(
+                        isSuccess = false,
+                        output = "",
+                        errorMessage = "Failed to install package: ${e.message}",
+                        exitCode = -1
+                    )
+                    call.respond(errorResult)
+                }
             }
 
             get("/openapi/documentation.yaml") {

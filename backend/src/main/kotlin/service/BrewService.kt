@@ -167,6 +167,7 @@ class BrewService {
     private fun executeBrewCommand(args: List<String>, timeoutSeconds: Long = 30): BrewCommandResult {
         return try {
             val command = listOf("brew") + args
+            println("Executing command: ${command.joinToString(" ")}")
             val process = ProcessBuilder(command)
                 .redirectErrorStream(true)
                 .start()
