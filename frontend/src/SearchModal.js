@@ -47,6 +47,7 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [], on
   };
 
   const handleClose = () => {
+    console.log('SearchModal handleClose called, clearing query');
     setQuery('');
     setSearchResults(null);
     setSearchError(null);
@@ -79,6 +80,7 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [], on
   };
 
   const handleInstallSuccess = () => {
+    console.log('Install success, current query:', query);
     // Refresh the search results to update the installed status
     if (query.trim()) {
       refreshSearchResults();
@@ -98,6 +100,10 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [], on
       return () => clearTimeout(timer);
     }
   }, [open]);
+
+  useEffect(() => {
+    console.log('Query changed to:', query);
+  }, [query]);
 
   const parseSearchResults = (searchData) => {
     if (!searchData || !searchData.isSuccess || !searchData.output) {
