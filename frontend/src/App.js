@@ -64,7 +64,12 @@ function App() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setPackages(data.packages || []);
+      // Add isInstalled: true to all packages since they are installed packages
+      const packagesWithInstalledFlag = (data.packages || []).map(pkg => ({
+        ...pkg,
+        isInstalled: true
+      }));
+      setPackages(packagesWithInstalledFlag);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching packages:', err);
