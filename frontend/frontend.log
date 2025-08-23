@@ -459,3 +459,540 @@ src/PackageList.js
   Line 8:3:  'Chip' is defined but never used  no-unused-vars
 
 webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:   'Card' is defined but never used         no-unused-vars
+  Line 6:3:   'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:   'Grid' is defined but never used         no-unused-vars
+  Line 19:8:  'SearchBar' is defined but never used    no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:   'Card' is defined but never used         no-unused-vars
+  Line 6:3:   'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:   'Grid' is defined but never used         no-unused-vars
+  Line 19:8:  'SearchBar' is defined but never used    no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                       no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used                no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                       no-unused-vars
+  Line 19:8:   'SearchBar' is defined but never used                  no-unused-vars
+  Line 29:10:  'searchResults' is assigned a value but never used     no-unused-vars
+  Line 29:25:  'setSearchResults' is assigned a value but never used  no-unused-vars
+  Line 30:10:  'searchLoading' is assigned a value but never used     no-unused-vars
+  Line 30:25:  'setSearchLoading' is assigned a value but never used  no-unused-vars
+  Line 31:10:  'searchError' is assigned a value but never used       no-unused-vars
+  Line 31:23:  'setSearchError' is assigned a value but never used    no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                       no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used                no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                       no-unused-vars
+  Line 19:8:   'SearchBar' is defined but never used                  no-unused-vars
+  Line 29:10:  'searchResults' is assigned a value but never used     no-unused-vars
+  Line 29:25:  'setSearchResults' is assigned a value but never used  no-unused-vars
+  Line 30:10:  'searchLoading' is assigned a value but never used     no-unused-vars
+  Line 30:25:  'setSearchLoading' is assigned a value but never used  no-unused-vars
+  Line 31:10:  'searchError' is assigned a value but never used       no-unused-vars
+  Line 31:23:  'setSearchError' is assigned a value but never used    no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                         no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used                  no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                         no-unused-vars
+  Line 19:8:   'SearchBar' is defined but never used                    no-unused-vars
+  Line 29:10:  'searchResults' is assigned a value but never used       no-unused-vars
+  Line 30:10:  'searchLoading' is assigned a value but never used       no-unused-vars
+  Line 31:10:  'searchError' is assigned a value but never used         no-unused-vars
+  Line 84:9:   'handleSearch' is assigned a value but never used        no-unused-vars
+  Line 102:9:  'handleClearSearch' is assigned a value but never used   no-unused-vars
+  Line 107:9:  'parseSearchResults' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                         no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used                  no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                         no-unused-vars
+  Line 19:8:   'SearchBar' is defined but never used                    no-unused-vars
+  Line 29:10:  'searchResults' is assigned a value but never used       no-unused-vars
+  Line 30:10:  'searchLoading' is assigned a value but never used       no-unused-vars
+  Line 31:10:  'searchError' is assigned a value but never used         no-unused-vars
+  Line 84:9:   'handleSearch' is assigned a value but never used        no-unused-vars
+  Line 102:9:  'handleClearSearch' is assigned a value but never used   no-unused-vars
+  Line 107:9:  'parseSearchResults' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/App.js
+  Line 174:10:  'SearchBar' is not defined  react/jsx-no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used         no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:    'Grid' is defined but never used         no-unused-vars
+  Line 16:44:  'SearchIcon' is defined but never used   no-unused-vars
+  Line 19:8:   'SearchModal' is defined but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/App.js
+  Line 174:10:  'SearchBar' is not defined  react/jsx-no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/App.js
+  Line 84:7:    'setSearchLoading' is not defined  no-undef
+  Line 85:7:    'setSearchError' is not defined    no-undef
+  Line 91:7:    'setSearchResults' is not defined  no-undef
+  Line 93:7:    'setSearchError' is not defined    no-undef
+  Line 96:7:    'setSearchLoading' is not defined  no-undef
+  Line 101:5:   'setSearchResults' is not defined  no-undef
+  Line 102:5:   'setSearchError' is not defined    no-undef
+  Line 163:14:  'searchResults' is not defined     no-undef
+  Line 166:23:  'searchResults' is not defined     no-undef
+  Line 166:58:  'searchResults' is not defined     no-undef
+  Line 172:10:  'SearchBar' is not defined         react/jsx-no-undef
+  Line 174:26:  'searchResults' is not defined     no-undef
+  Line 175:26:  'searchLoading' is not defined     no-undef
+  Line 176:24:  'searchError' is not defined       no-undef
+  Line 181:21:  'searchResults' is not defined     no-undef
+  Line 181:56:  'searchResults' is not defined     no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                         no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used                  no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                         no-unused-vars
+  Line 16:44:  'SearchIcon' is defined but never used                   no-unused-vars
+  Line 19:8:   'SearchModal' is defined but never used                  no-unused-vars
+  Line 29:10:  'searchModalOpen' is assigned a value but never used     no-unused-vars
+  Line 29:27:  'setSearchModalOpen' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/App.js
+  Line 84:7:    'setSearchLoading' is not defined  no-undef
+  Line 85:7:    'setSearchError' is not defined    no-undef
+  Line 91:7:    'setSearchResults' is not defined  no-undef
+  Line 93:7:    'setSearchError' is not defined    no-undef
+  Line 96:7:    'setSearchLoading' is not defined  no-undef
+  Line 101:5:   'setSearchResults' is not defined  no-undef
+  Line 102:5:   'setSearchError' is not defined    no-undef
+  Line 163:14:  'searchResults' is not defined     no-undef
+  Line 166:23:  'searchResults' is not defined     no-undef
+  Line 166:58:  'searchResults' is not defined     no-undef
+  Line 172:10:  'SearchBar' is not defined         react/jsx-no-undef
+  Line 174:26:  'searchResults' is not defined     no-undef
+  Line 175:26:  'searchLoading' is not defined     no-undef
+  Line 176:24:  'searchError' is not defined       no-undef
+  Line 181:21:  'searchResults' is not defined     no-undef
+  Line 181:56:  'searchResults' is not defined     no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/App.js
+  Line 137:14:  'searchResults' is not defined       no-undef
+  Line 140:23:  'searchResults' is not defined       no-undef
+  Line 140:39:  'parseSearchResults' is not defined  no-undef
+  Line 140:58:  'searchResults' is not defined       no-undef
+  Line 146:10:  'SearchBar' is not defined           react/jsx-no-undef
+  Line 147:21:  'handleSearch' is not defined        no-undef
+  Line 148:26:  'searchResults' is not defined       no-undef
+  Line 149:26:  'searchLoading' is not defined       no-undef
+  Line 150:24:  'searchError' is not defined         no-undef
+  Line 151:26:  'handleClearSearch' is not defined   no-undef
+  Line 155:21:  'searchResults' is not defined       no-undef
+  Line 155:37:  'parseSearchResults' is not defined  no-undef
+  Line 155:56:  'searchResults' is not defined       no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                             no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used                      no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                             no-unused-vars
+  Line 16:44:  'SearchIcon' is defined but never used                       no-unused-vars
+  Line 19:8:   'SearchModal' is defined but never used                      no-unused-vars
+  Line 29:10:  'searchModalOpen' is assigned a value but never used         no-unused-vars
+  Line 82:9:   'handleOpenSearchModal' is assigned a value but never used   no-unused-vars
+  Line 86:9:   'handleCloseSearchModal' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/App.js
+  Line 137:14:  'searchResults' is not defined       no-undef
+  Line 140:23:  'searchResults' is not defined       no-undef
+  Line 140:39:  'parseSearchResults' is not defined  no-undef
+  Line 140:58:  'searchResults' is not defined       no-undef
+  Line 146:10:  'SearchBar' is not defined           react/jsx-no-undef
+  Line 147:21:  'handleSearch' is not defined        no-undef
+  Line 148:26:  'searchResults' is not defined       no-undef
+  Line 149:26:  'searchLoading' is not defined       no-undef
+  Line 150:24:  'searchError' is not defined         no-undef
+  Line 151:26:  'handleClearSearch' is not defined   no-undef
+  Line 155:21:  'searchResults' is not defined       no-undef
+  Line 155:37:  'parseSearchResults' is not defined  no-undef
+  Line 155:56:  'searchResults' is not defined       no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                             no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used                      no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                             no-unused-vars
+  Line 19:8:   'SearchModal' is defined but never used                      no-unused-vars
+  Line 29:10:  'searchModalOpen' is assigned a value but never used         no-unused-vars
+  Line 86:9:   'handleCloseSearchModal' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                             no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used                      no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                             no-unused-vars
+  Line 19:8:   'SearchModal' is defined but never used                      no-unused-vars
+  Line 29:10:  'searchModalOpen' is assigned a value but never used         no-unused-vars
+  Line 86:9:   'handleCloseSearchModal' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:   'Card' is defined but never used           no-unused-vars
+  Line 6:3:   'CardContent' is defined but never used    no-unused-vars
+  Line 7:3:   'Grid' is defined but never used           no-unused-vars
+  Line 20:8:  'PackageFilter' is defined but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:   'Card' is defined but never used           no-unused-vars
+  Line 6:3:   'CardContent' is defined but never used    no-unused-vars
+  Line 7:3:   'Grid' is defined but never used           no-unused-vars
+  Line 20:8:  'PackageFilter' is defined but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                     no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used              no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                     no-unused-vars
+  Line 20:8:   'PackageFilter' is defined but never used            no-unused-vars
+  Line 31:10:  'filterValue' is assigned a value but never used     no-unused-vars
+  Line 31:23:  'setFilterValue' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:    'Card' is defined but never used                     no-unused-vars
+  Line 6:3:    'CardContent' is defined but never used              no-unused-vars
+  Line 7:3:    'Grid' is defined but never used                     no-unused-vars
+  Line 20:8:   'PackageFilter' is defined but never used            no-unused-vars
+  Line 31:10:  'filterValue' is assigned a value but never used     no-unused-vars
+  Line 31:23:  'setFilterValue' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:   'Card' is defined but never used                          no-unused-vars
+  Line 6:3:   'CardContent' is defined but never used                   no-unused-vars
+  Line 7:3:   'Grid' is defined but never used                          no-unused-vars
+  Line 20:8:  'PackageFilter' is defined but never used                 no-unused-vars
+  Line 92:9:  'handleFilterChange' is assigned a value but never used   no-unused-vars
+  Line 96:9:  'getFilteredPackages' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:   'Card' is defined but never used                          no-unused-vars
+  Line 6:3:   'CardContent' is defined but never used                   no-unused-vars
+  Line 7:3:   'Grid' is defined but never used                          no-unused-vars
+  Line 20:8:  'PackageFilter' is defined but never used                 no-unused-vars
+  Line 92:9:  'handleFilterChange' is assigned a value but never used   no-unused-vars
+  Line 96:9:  'getFilteredPackages' is assigned a value but never used  no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 5:3:  'Card' is defined but never used         no-unused-vars
+  Line 6:3:  'CardContent' is defined but never used  no-unused-vars
+  Line 7:3:  'Grid' is defined but never used         no-unused-vars
+
+src/PackageList.js
+  Line 8:3:  'Chip' is defined but never used  no-unused-vars
+
+webpack compiled with 1 warning

@@ -60,6 +60,17 @@ object ApplicationServer {
                 call.respond(result)
             }
 
+            get("/api/packages/search/{query}") {
+                val query = call.parameters["query"]
+                if (query.isNullOrBlank()) {
+                    call.respondText("Search query is required", status = HttpStatusCode.BadRequest)
+                    return@get
+                }
+                log.info("Search packages endpoint hit for query: $query")
+                val result = brewService.searchPackages(query)
+                call.respond(result)
+            }
+
             get("/openapi/documentation.yaml") {
                 try {
                     val content =
@@ -79,6 +90,7 @@ object ApplicationServer {
         log.info("Health check available at: http://localhost:8080/health")
         log.info("List packages available at: http://localhost:8080/api/packages")
         log.info("Get package info at: http://localhost:8080/api/packages/{packageName}")
+        log.info("Search packages at: http://localhost:8080/api/packages/search/{query}")
         log.info("Swagger UI available at: http://localhost:8080/swagger")
     }
 }

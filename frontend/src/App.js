@@ -13,9 +13,11 @@ import {
   Toolbar,
   Chip
 } from '@mui/material';
-import { Refresh as RefreshIcon } from '@mui/icons-material';
+import { Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import PackageInfoDialog from './PackageInfoDialog';
 import PackageList from './PackageList';
+import SearchModal from './SearchModal';
+import PackageFilter from './PackageFilter';
 
 function App() {
   const [packages, setPackages] = useState([]);
@@ -25,6 +27,8 @@ function App() {
   const [packageInfo, setPackageInfo] = useState(null);
   const [packageInfoLoading, setPackageInfoLoading] = useState(false);
   const [packageInfoError, setPackageInfoError] = useState(null);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [filterValue, setFilterValue] = useState('');
 
   useEffect(() => {
     fetchPackages();
@@ -77,6 +81,30 @@ function App() {
     setPackageInfoError(null);
   };
 
+  const handleOpenSearchModal = () => {
+    setSearchModalOpen(true);
+  };
+
+  const handleCloseSearchModal = () => {
+    setSearchModalOpen(false);
+  };
+
+  const handleFilterChange = (value) => {
+    setFilterValue(value);
+  };
+
+  const getFilteredPackages = () => {
+    if (!filterValue.trim()) {
+      return packages;
+    }
+    
+    const filterLower = filterValue.toLowerCase();
+    return packages.filter(pkg => 
+      pkg.name.toLowerCase().includes(filterLower) ||
+      (pkg.version && pkg.version.toLowerCase().includes(filterLower))
+    );
+  };
+
   if (loading) {
     return (
       <Box
@@ -122,19 +150,35 @@ function App() {
           </Alert>
         )}
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Installed Packages
-          </Typography>
-          <Chip 
-            label={`${packages.length} packages`} 
-            color="primary" 
-            variant="outlined"
-          />
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Installed Packages
+            </Typography>
+            <Chip 
+              label={`${packages.length} packages`} 
+              color="primary" 
+              variant="outlined"
+            />
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<SearchIcon />}
+            onClick={handleOpenSearchModal}
+            sx={{ minWidth: 120 }}
+          >
+            Search
+          </Button>
         </Box>
 
+        <PackageFilter
+          onFilterChange={handleFilterChange}
+          filteredCount={getFilteredPackages().length}
+          totalCount={packages.length}
+        />
+
         <PackageList 
-          packages={packages} 
+          packages={getFilteredPackages()} 
           onPackageClick={handlePackageClick} 
         />
 
@@ -145,6 +189,12 @@ function App() {
           packageInfo={packageInfo}
           packageInfoLoading={packageInfoLoading}
           packageInfoError={packageInfoError}
+        />
+
+        <SearchModal
+          open={searchModalOpen}
+          onClose={handleCloseSearchModal}
+          onPackageClick={handlePackageClick}
         />
       </Container>
     </Box>

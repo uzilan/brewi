@@ -77,6 +77,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrewCommandResult'
 
+  /api/packages/search/{query}:
+    get:
+      operationId: searchPackages
+      summary: Search for packages
+      description: Searches for packages using the brew search command
+      parameters:
+        - name: query
+          in: path
+          required: true
+          description: Search query to find packages
+          schema:
+            type: string
+            example: "python"
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+        '400':
+          description: Bad request - search query is required
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Search query is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+
 components:
   schemas:
     BrewListResult:
