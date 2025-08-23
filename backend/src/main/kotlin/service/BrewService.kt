@@ -47,6 +47,41 @@ class BrewService {
     }
     
     /**
+     * Gets comprehensive package information including dependencies and dependents
+     */
+    fun getPackageInfoWithDependencies(packageName: String): model.BrewPackageInfo {
+        val infoResult = getPackageInfo(packageName)
+        val depsResult = getPackageDependencies(packageName)
+        val usesResult = getPackageDependents(packageName)
+        
+        // Parse dependencies and dependents
+        val dependencies = if (depsResult.isSuccess) {
+            depsResult.output.lines()
+                .filter { it.isNotBlank() }
+                .map { it.trim() }
+        } else {
+            emptyList()
+        }
+        
+        val dependents = if (usesResult.isSuccess) {
+            usesResult.output.lines()
+                .filter { it.isNotBlank() }
+                .map { it.trim() }
+        } else {
+            emptyList()
+        }
+        
+        return model.BrewPackageInfo(
+            name = packageName,
+            output = infoResult.output,
+            isSuccess = infoResult.isSuccess,
+            errorMessage = infoResult.errorMessage,
+            dependencies = dependencies,
+            dependents = dependents
+        )
+    }
+    
+    /**
      * Executes brew install command for a specific package
      */
     fun installPackage(packageName: String): BrewCommandResult {
@@ -58,6 +93,20 @@ class BrewService {
      */
     fun uninstallPackage(packageName: String): BrewCommandResult {
         return executeBrewCommand(listOf("uninstall", packageName), 300) // 5 minute timeout for uninstalls
+    }
+    
+    /**
+     * Gets dependencies for a specific package
+     */
+    fun getPackageDependencies(packageName: String): BrewCommandResult {
+        return executeBrewCommand(listOf("deps", packageName))
+    }
+    
+    /**
+     * Gets packages that depend on a specific package
+     */
+    fun getPackageDependents(packageName: String): BrewCommandResult {
+        return executeBrewCommand(listOf("uses", packageName))
     }
     
     /**

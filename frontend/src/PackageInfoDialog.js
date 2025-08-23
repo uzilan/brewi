@@ -10,7 +10,9 @@ import {
   Alert,
   Button,
   Paper,
-  Divider
+  Divider,
+  Chip,
+  Grid
 } from '@mui/material';
 
 function PackageInfoDialog({ 
@@ -49,6 +51,57 @@ function PackageInfoDialog({
           </Alert>
         ) : packageInfo ? (
           <Box>
+            {/* Dependencies Section */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Dependencies
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              {packageInfo.dependencies && packageInfo.dependencies.length > 0 ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {packageInfo.dependencies.map((dep, index) => (
+                    <Chip 
+                      key={index} 
+                      label={dep} 
+                      size="small" 
+                      variant="outlined"
+                      color="primary"
+                    />
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No dependencies
+                </Typography>
+              )}
+            </Paper>
+
+            {/* Dependents Section */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Dependents (Packages that depend on this)
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              {packageInfo.dependents && packageInfo.dependents.length > 0 ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {packageInfo.dependents.map((dep, index) => (
+                    <Chip 
+                      key={index} 
+                      label={dep} 
+                      size="small" 
+                      variant="outlined"
+                      color="secondary"
+                    />
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No packages depend on this
+                </Typography>
+              )}
+            </Paper>
+
+            {/* Command Output Section */}
             <Paper sx={{ p: 2, mb: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 Command Output

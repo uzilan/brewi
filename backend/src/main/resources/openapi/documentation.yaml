@@ -47,7 +47,7 @@ paths:
     get:
       operationId: getPackageInfo
       summary: Get package information
-      description: Returns detailed information about a specific package
+      description: Returns detailed information about a specific package including dependencies and dependents
       parameters:
         - name: packageName
           in: path
@@ -58,11 +58,11 @@ paths:
             example: "node"
       responses:
         '200':
-          description: Package information
+          description: Package information with dependencies
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BrewCommandResult'
+                $ref: '#/components/schemas/BrewPackageInfo'
         '400':
           description: Bad request - package name is required
           content:
@@ -75,7 +75,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BrewCommandResult'
+                $ref: '#/components/schemas/BrewPackageInfo'
 
   /api/packages/search/{query}:
     get:
@@ -274,3 +274,44 @@ components:
       required:
         - isSuccess
         - output
+
+    BrewPackageInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Package name
+        description:
+          type: string
+          nullable: true
+          description: Package description
+        version:
+          type: string
+          nullable: true
+          description: Package version
+        dependencies:
+          type: array
+          items:
+            type: string
+          description: List of packages this package depends on
+        dependents:
+          type: array
+          items:
+            type: string
+          description: List of packages that depend on this package
+        output:
+          type: string
+          description: The command output from brew info
+        isSuccess:
+          type: boolean
+          description: Whether the command executed successfully
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if the command failed
+      required:
+        - name
+        - output
+        - isSuccess
+        - dependencies
+        - dependents
