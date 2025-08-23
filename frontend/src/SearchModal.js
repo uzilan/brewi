@@ -81,14 +81,12 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [], on
 
   const handleInstallSuccess = () => {
     console.log('Install success, current query:', query);
-    // Refresh the search results to update the installed status
-    if (query.trim()) {
-      refreshSearchResults();
-    }
-    // Also refresh the installed packages list from parent
+    // Refresh the installed packages list from parent
     if (onRefreshInstalledPackages) {
       onRefreshInstalledPackages();
     }
+    // Close the search modal and return to main view
+    handleClose();
   };
 
   useEffect(() => {
