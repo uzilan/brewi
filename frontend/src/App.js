@@ -13,11 +13,12 @@ import {
   Toolbar,
   Chip
 } from '@mui/material';
-import { Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
+import { Refresh as RefreshIcon, Search as SearchIcon, Update as UpdateIcon } from '@mui/icons-material';
 import PackageInfoDialog from './PackageInfoDialog';
 import PackageList from './PackageList';
 import SearchModal from './SearchModal';
 import PackageFilter from './PackageFilter';
+import UpdateUpgradeModal from './UpdateUpgradeModal';
 
 function App() {
   const [packages, setPackages] = useState([]);
@@ -28,6 +29,7 @@ function App() {
   const [packageInfoLoading, setPackageInfoLoading] = useState(false);
   const [packageInfoError, setPackageInfoError] = useState(null);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [updateUpgradeModalOpen, setUpdateUpgradeModalOpen] = useState(false);
   const [filterValue, setFilterValue] = useState('');
 
   useEffect(() => {
@@ -87,6 +89,14 @@ function App() {
 
   const handleCloseSearchModal = () => {
     setSearchModalOpen(false);
+  };
+
+  const handleOpenUpdateUpgradeModal = () => {
+    setUpdateUpgradeModalOpen(true);
+  };
+
+  const handleCloseUpdateUpgradeModal = () => {
+    setUpdateUpgradeModalOpen(false);
   };
 
   const handleFilterChange = (value) => {
@@ -161,14 +171,25 @@ function App() {
               variant="outlined"
             />
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<SearchIcon />}
-            onClick={handleOpenSearchModal}
-            sx={{ minWidth: 120 }}
-          >
-            Search
-          </Button>
+          <Box display="flex" gap={1}>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<UpdateIcon />}
+              onClick={handleOpenUpdateUpgradeModal}
+              sx={{ minWidth: 140 }}
+            >
+              Update & Upgrade
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<SearchIcon />}
+              onClick={handleOpenSearchModal}
+              sx={{ minWidth: 120 }}
+            >
+              Search
+            </Button>
+          </Box>
         </Box>
 
         <PackageFilter
@@ -195,6 +216,12 @@ function App() {
           open={searchModalOpen}
           onClose={handleCloseSearchModal}
           onPackageClick={handlePackageClick}
+          installedPackages={packages}
+        />
+
+        <UpdateUpgradeModal
+          open={updateUpgradeModalOpen}
+          onClose={handleCloseUpdateUpgradeModal}
         />
       </Container>
     </Box>

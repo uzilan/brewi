@@ -7,7 +7,7 @@ import {
   Box,
   Chip
 } from '@mui/material';
-import { Info as InfoIcon } from '@mui/icons-material';
+import { Info as InfoIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 
 function PackageList({ packages, onPackageClick }) {
   if (packages.length === 0) {
@@ -36,19 +36,30 @@ function PackageList({ packages, onPackageClick }) {
             }}
             onClick={() => onPackageClick(pkg)}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h6" component="h3" gutterBottom>
-                    {pkg.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Version: {pkg.version || 'N/A'}
-                  </Typography>
-                </Box>
-                <InfoIcon color="action" sx={{ ml: 1 }} />
-              </Box>
-            </CardContent>
+                               <CardContent>
+                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                       <Box sx={{ flex: 1 }}>
+                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                           <Typography variant="h6" component="h3">
+                             {pkg.name}
+                           </Typography>
+                           {pkg.isInstalled && (
+                             <Chip
+                               label="Installed"
+                               size="small"
+                               color="success"
+                               icon={<CheckCircleIcon />}
+                               sx={{ fontSize: '0.75rem', height: 20 }}
+                             />
+                           )}
+                         </Box>
+                         <Typography variant="body2" color="text.secondary">
+                           Version: {pkg.version || 'N/A'}
+                         </Typography>
+                       </Box>
+                       <InfoIcon color="action" sx={{ ml: 1 }} />
+                     </Box>
+                   </CardContent>
           </Card>
         </Grid>
       ))}

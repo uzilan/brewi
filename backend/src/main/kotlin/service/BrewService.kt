@@ -2,18 +2,9 @@ package service
 
 import model.BrewListResult
 import model.BrewPackage
+import model.BrewCommandResult
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-
-/**
- * Result of executing a brew command
- */
-data class BrewCommandResult(
-    val isSuccess: Boolean,
-    val output: String,
-    val errorMessage: String? = null,
-    val exitCode: Int = 0
-)
 
 /**
  * Service that executes brew commands
@@ -60,6 +51,44 @@ class BrewService {
      */
     fun checkOutdated(): BrewCommandResult {
         return executeBrewCommand(listOf("outdated"))
+    }
+    
+    /**
+     * Executes brew update command to update Homebrew itself
+     */
+    fun updateBrew(): BrewCommandResult {
+        return executeBrewCommand(listOf("update"))
+    }
+    
+    /**
+     * Executes brew upgrade command to upgrade all packages
+     */
+    fun upgradePackages(): BrewCommandResult {
+        return executeBrewCommand(listOf("upgrade"))
+    }
+    
+    /**
+     * Executes brew update followed by brew upgrade
+     * @return Combined result of both operations
+     */
+    fun updateAndUpgrade(): BrewCommandResult {
+        val updateResult = updateBrew()
+        if (!updateResult.isSuccess) {
+            return BrewCommandResult(
+                isSuccess = false,
+                output = updateResult.output,
+                errorMessage = "Update failed: ${updateResult.errorMessage}",
+                exitCode = updateResult.exitCode
+            )
+        }
+        
+        val upgradeResult = upgradePackages()
+        return BrewCommandResult(
+            isSuccess = upgradeResult.isSuccess,
+            output = "UPDATE:\n${updateResult.output}\n\nUPGRADE:\n${upgradeResult.output}",
+            errorMessage = if (!upgradeResult.isSuccess) upgradeResult.errorMessage else null,
+            exitCode = upgradeResult.exitCode
+        )
     }
     
     /**

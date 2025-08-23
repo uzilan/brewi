@@ -8,6 +8,7 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.swagger.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.request.*
 import service.BrewService
 
 object ApplicationServer {
@@ -71,6 +72,12 @@ object ApplicationServer {
                 call.respond(result)
             }
 
+            post("/api/brew/update-and-upgrade") {
+                log.info("Update and upgrade endpoint hit")
+                val result = brewService.updateAndUpgrade()
+                call.respond(result)
+            }
+
             get("/openapi/documentation.yaml") {
                 try {
                     val content =
@@ -91,6 +98,7 @@ object ApplicationServer {
         log.info("List packages available at: http://localhost:8080/api/packages")
         log.info("Get package info at: http://localhost:8080/api/packages/{packageName}")
         log.info("Search packages at: http://localhost:8080/api/packages/search/{query}")
+        log.info("Update and upgrade at: http://localhost:8080/api/brew/update-and-upgrade")
         log.info("Swagger UI available at: http://localhost:8080/swagger")
     }
 }

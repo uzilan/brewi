@@ -111,6 +111,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrewCommandResult'
 
+  /api/brew/update-and-upgrade:
+    post:
+      operationId: updateAndUpgrade
+      summary: Update and upgrade Homebrew
+      description: Updates Homebrew itself and then upgrades all installed packages
+      responses:
+        '200':
+          description: Update and upgrade completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+
 components:
   schemas:
     BrewListResult:

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,11 +15,12 @@ import {
 import { Search as SearchIcon } from '@mui/icons-material';
 import PackageList from './PackageList';
 
-function SearchModal({ open, onClose, onPackageClick }) {
+function SearchModal({ open, onClose, onPackageClick, installedPackages = [] }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const inputRef = useRef(null);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -49,15 +50,35 @@ function SearchModal({ open, onClose, onPackageClick }) {
     onClose();
   };
 
+  useEffect(() => {
+    if (open && inputRef.current) {
+      // Small delay to ensure the modal is fully rendered
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   const parseSearchResults = (searchData) => {
     if (!searchData || !searchData.isSuccess || !searchData.output) {
       return [];
     }
     
+    const installedPackageNames = installedPackages.map(pkg => pkg.name);
+    
     return searchData.output
       .split('\n')
       .filter(line => line.trim())
-      .map(name => ({ name: name.trim(), version: null }));
+      .map(name => {
+        const packageName = name.trim();
+        const isInstalled = installedPackageNames.includes(packageName);
+        return { 
+          name: packageName, 
+          version: null,
+          isInstalled 
+        };
+      });
   };
 
   const handlePackageClick = (pkg) => {
@@ -83,9 +104,9 @@ function SearchModal({ open, onClose, onPackageClick }) {
         </Box>
       </DialogTitle>
       <DialogContent>
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3, pt: 1 }}>
           <form onSubmit={handleSearch}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
               <TextField
                 fullWidth
                 label="Search packages"
@@ -95,6 +116,33 @@ function SearchModal({ open, onClose, onPackageClick }) {
                 disabled={searchLoading}
                 size="small"
                 autoFocus
+                variant="outlined"
+                inputRef={inputRef}
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    fontSize: '0.875rem',
+                    transform: 'translate(14px, 16px) scale(1)',
+                    '&.Mui-focused': {
+                      fontSize: '0.75rem',
+                      transform: 'translate(14px, -6px) scale(0.75)',
+                    },
+                    '&.MuiFormLabel-filled': {
+                      fontSize: '0.75rem',
+                      transform: 'translate(14px, -6px) scale(0.75)',
+                    }
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(0, 0, 0, 0.87)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                  },
+                }}
               />
               <Button
                 type="submit"
