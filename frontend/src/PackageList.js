@@ -8,7 +8,7 @@ import {
   Chip,
   Button
 } from '@mui/material';
-import { Info as InfoIcon, CheckCircle as CheckCircleIcon, Download as DownloadIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { CheckCircle as CheckCircleIcon, Download as DownloadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClick }) {
   if (packages.length === 0) {
@@ -26,9 +26,11 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
       {packages.map((pkg, index) => (
         <Grid key={index} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%', lg: '25%' } }}>
           <Card 
+            onClick={() => onPackageClick(pkg)}
             sx={{ 
               height: '100%',
               transition: 'transform 0.2s',
+              cursor: 'pointer',
               '&:hover': {
                 transform: 'translateY(-2px)',
                 boxShadow: 3
@@ -57,17 +59,6 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
                          </Typography>
                        </Box>
                        <Box sx={{ display: 'flex', gap: 1 }}>
-                         <Button
-                           size="small"
-                           startIcon={<InfoIcon />}
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             onPackageClick(pkg);
-                           }}
-                           sx={{ minWidth: 'auto', px: 1 }}
-                         >
-                           Info
-                         </Button>
                          {!pkg.isInstalled && onInstallClick && (
                            <Button
                              size="small"
