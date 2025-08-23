@@ -72,7 +72,7 @@ object ApplicationServer {
                 call.respond(result)
             }
 
-            post("/api/brew/update-and-upgrade") {
+            post("/api/packages/upgrade") {
                 log.info("Update and upgrade endpoint hit")
                 val result = brewService.updateAndUpgrade()
                 call.respond(result)
@@ -98,7 +98,7 @@ object ApplicationServer {
         log.info("List packages available at: http://localhost:8080/api/packages")
         log.info("Get package info at: http://localhost:8080/api/packages/{packageName}")
         log.info("Search packages at: http://localhost:8080/api/packages/search/{query}")
-        log.info("Update and upgrade at: http://localhost:8080/api/brew/update-and-upgrade")
+        log.info("Update and upgrade at: http://localhost:8080/api/packages/upgrade")
         log.info("Swagger UI available at: http://localhost:8080/swagger")
     }
 }

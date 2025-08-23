@@ -28,7 +28,7 @@ function UpdateUpgradeModal({ open, onClose }) {
     setResult(null);
 
     try {
-      const response = await fetch('/api/brew/update-and-upgrade', {
+      const response = await fetch('/api/packages/upgrade', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
