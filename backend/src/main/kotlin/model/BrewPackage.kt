@@ -5,5 +5,5 @@ package model
  */
 data class BrewPackage(
     val name: String,
-    val version: String? = null
+    val version: String? = null,
 )

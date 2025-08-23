@@ -7,5 +7,5 @@ data class BrewCommandResult(
     val isSuccess: Boolean,
     val output: String,
     val errorMessage: String? = null,
-    val exitCode: Int = 0
+    val exitCode: Int = 0,
 )

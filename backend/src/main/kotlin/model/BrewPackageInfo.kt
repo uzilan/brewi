@@ -11,5 +11,5 @@ data class BrewPackageInfo(
     val dependents: List<String> = emptyList(),
     val output: String,
     val isSuccess: Boolean,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
 )

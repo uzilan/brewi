@@ -1,14 +1,20 @@
-import io.ktor.http.*
-import io.ktor.serialization.jackson.*
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.plugins.swagger.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.request.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.Application
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.application.log
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.plugins.swagger.swaggerUI
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 import service.BrewService
 
 object ApplicationServer {
@@ -93,16 +99,20 @@ object ApplicationServer {
                 log.info("Install package endpoint hit for package: $packageName")
                 try {
                     val result = brewService.installPackage(packageName)
-                    log.info("Install package result for $packageName: success=${result.isSuccess}, exitCode=${result.exitCode}")
+                    log.info(
+                        "Install package result for $packageName: success=${result.isSuccess}, " +
+                            "exitCode=${result.exitCode}",
+                    )
                     call.respond(result)
                 } catch (e: Exception) {
                     log.error("Error installing package $packageName: ${e.message}", e)
-                    val errorResult = model.BrewCommandResult(
-                        isSuccess = false,
-                        output = "",
-                        errorMessage = "Failed to install package: ${e.message}",
-                        exitCode = -1
-                    )
+                    val errorResult =
+                        model.BrewCommandResult(
+                            isSuccess = false,
+                            output = "",
+                            errorMessage = "Failed to install package: ${e.message}",
+                            exitCode = -1,
+                        )
                     call.respond(errorResult)
                 }
             }
@@ -116,16 +126,20 @@ object ApplicationServer {
                 log.info("Uninstall package endpoint hit for package: $packageName")
                 try {
                     val result = brewService.uninstallPackage(packageName)
-                    log.info("Uninstall package result for $packageName: success=${result.isSuccess}, exitCode=${result.exitCode}")
+                    log.info(
+                        "Uninstall package result for $packageName: success=${result.isSuccess}, " +
+                            "exitCode=${result.exitCode}",
+                    )
                     call.respond(result)
                 } catch (e: Exception) {
                     log.error("Error uninstalling package $packageName: ${e.message}", e)
-                    val errorResult = model.BrewCommandResult(
-                        isSuccess = false,
-                        output = "",
-                        errorMessage = "Failed to uninstall package: ${e.message}",
-                        exitCode = -1
-                    )
+                    val errorResult =
+                        model.BrewCommandResult(
+                            isSuccess = false,
+                            output = "",
+                            errorMessage = "Failed to uninstall package: ${e.message}",
+                            exitCode = -1,
+                        )
                     call.respond(errorResult)
                 }
             }
@@ -134,12 +148,17 @@ object ApplicationServer {
                 try {
                     val content =
                         java.io
-                            .File("/Users/uzilan/dev/brewanator/backend/src/main/resources/openapi/documentation.yaml")
+                            .File(
+                                "/Users/uzilan/dev/brewanator/backend/src/main/resources/openapi/documentation.yaml",
+                            )
                             .readText()
                     call.respondText(content)
                 } catch (e: Exception) {
                     log.error("Error reading OpenAPI documentation file: ${e.message}", e)
-                    call.respondText("Error reading file: ${e.message}", status = HttpStatusCode.InternalServerError)
+                    call.respondText(
+                        "Error reading file: ${e.message}",
+                        status = HttpStatusCode.InternalServerError,
+                    )
                 }
             }
         }

@@ -3,6 +3,7 @@ val ktorVersion = "3.2.3"
 plugins {
     kotlin("jvm") version "2.2.10"
     application
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
 }
 
 group = "com.brewanator"
@@ -25,7 +26,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
     implementation("io.ktor:ktor-server-swagger:$ktorVersion")
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
-    
+
     // Logging
     implementation("ch.qos.logback:logback-classic:1.4.11")
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
@@ -53,6 +54,16 @@ tasks.withType<JavaCompile> {
     sourceCompatibility = "24"
 }
 
+// Configure ktlint
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    version.set("1.2.1")
+    android.set(false)
+    verbose.set(true)
+    filter {
+        exclude { element -> element.file.path.contains("build/") }
+    }
+}
+
 application {
-    mainClass.set("ApplicationServer")
+    mainClass.set("ApplicationServerKt")
 }

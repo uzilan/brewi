@@ -1,18 +1,19 @@
 package service
 
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.*
 
 class BrewServiceTest {
-
     @Test
     fun `listPackages should return result object`() {
         val brewService = BrewService()
         val result = brewService.listPackages()
-        
+
         assertNotNull(result)
         assertTrue(result.totalCount >= 0)
-        
+
         if (result.isSuccess) {
             assertEquals(result.packages.size, result.totalCount)
             // If successful, packages should be sorted by name

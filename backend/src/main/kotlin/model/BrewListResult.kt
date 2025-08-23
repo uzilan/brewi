@@ -7,5 +7,5 @@ data class BrewListResult(
     val packages: List<BrewPackage>,
     val isSuccess: Boolean,
     val errorMessage: String? = null,
-    val totalCount: Int = packages.size
+    val totalCount: Int = packages.size,
 )
