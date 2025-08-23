@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Brewanator API - Dark Cat Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="/swagger-ui.css" />
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin:0;
+        }
+        
+        /* Dark Cat Swagger UI - HTTP Cat Image Size Overrides */
+        .swagger-ui .response-col_status .http-cat {
+            width: 80px !important;
+            height: 80px !important;
+            max-width: 80px !important;
+            max-height: 80px !important;
+        }
+        
+        /* Dark Cat Swagger UI - Hide Status Text Next to Cat Images */
+        .swagger-ui .response-col_status {
+            overflow: hidden !important;
+        }
+        .swagger-ui .response-col_status .http-cat {
+            display: block !important;
+            margin: 0 auto !important;
+        }
+        .swagger-ui .response-col_status .response-undocumented {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="swagger-ui"></div>
+
+    <script src="/swagger-ui-bundle.js" charset="UTF-8"> </script>
+    <script src="/swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
+    <script>
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: '/openapi/documentation.yaml',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout"
+            });
+        };
+    </script>
+</body>
+</html>
