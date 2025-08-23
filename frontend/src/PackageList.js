@@ -87,14 +87,13 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
                              size="small"
                              variant="contained"
                              color="error"
-                             startIcon={<DeleteIcon />}
                              onClick={(e) => {
                                e.stopPropagation();
                                onUninstallClick(pkg);
                              }}
                              sx={{ minWidth: 'auto', px: 1 }}
                            >
-                             Uninstall
+                             <DeleteIcon />
                            </Button>
                          )}
                        </Box>
