@@ -250,9 +250,10 @@ function App() {
           installedPackages={packages}
         />
 
-        <UpdateUpgradeModal
-          open={updateUpgradeModalOpen}
+                <UpdateUpgradeModal 
+          open={updateUpgradeModalOpen} 
           onClose={handleCloseUpdateUpgradeModal}
+          onUpdateSuccess={fetchLastUpdateTime}
         />
       </Container>
     </Box>

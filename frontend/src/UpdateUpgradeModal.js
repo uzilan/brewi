@@ -17,11 +17,10 @@ import {
   Error as ErrorIcon,
 } from '@mui/icons-material';
 
-function UpdateUpgradeModal({ open, onClose }) {
+function UpdateUpgradeModal({ open, onClose, onUpdateSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [lastUpdateTime, setLastUpdateTime] = useState(null);
 
   const handleUpdateAndUpgrade = async () => {
     setIsLoading(true);
@@ -40,6 +39,9 @@ function UpdateUpgradeModal({ open, onClose }) {
 
       if (response.ok) {
         setResult(data);
+        if (data.isSuccess && onUpdateSuccess) {
+          onUpdateSuccess();
+        }
       } else {
         setError(data.errorMessage || 'Failed to update and upgrade Homebrew');
       }
@@ -56,26 +58,7 @@ function UpdateUpgradeModal({ open, onClose }) {
     onClose();
   };
 
-  const fetchLastUpdateTime = async () => {
-    try {
-      const response = await fetch('/api/packages/last-update');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.isSuccess) {
-          setLastUpdateTime(data.output);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch last update time:', err);
-    }
-  };
 
-  // Fetch last update time when modal opens
-  React.useEffect(() => {
-    if (open) {
-      fetchLastUpdateTime();
-    }
-  }, [open]);
 
   const formatOutput = (output) => {
     if (!output) return 'No output available';
@@ -113,16 +96,6 @@ function UpdateUpgradeModal({ open, onClose }) {
               This will update Homebrew itself and then upgrade all installed packages. 
               This process may take several minutes.
             </Typography>
-            {lastUpdateTime && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                  Last Updated:
-                </Typography>
-                <Typography variant="body2">
-                  {lastUpdateTime}
-                </Typography>
-              </Alert>
-            )}
             <Alert severity="info" sx={{ mb: 2 }}>
               The update will fetch the latest package information, and the upgrade will 
               update all outdated packages to their latest versions.
