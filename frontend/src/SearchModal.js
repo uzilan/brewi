@@ -16,7 +16,7 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import PackageList from './PackageList';
 import InstallModal from './InstallModal';
 
-function SearchModal({ open, onClose, onPackageClick, installedPackages = [] }) {
+function SearchModal({ open, onClose, onPackageClick, installedPackages = [], onRefreshInstalledPackages }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -62,6 +62,10 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [] }) 
     // Refresh the search results to update the installed status
     if (query.trim()) {
       handleSearch({ preventDefault: () => {} });
+    }
+    // Also refresh the installed packages list from parent
+    if (onRefreshInstalledPackages) {
+      onRefreshInstalledPackages();
     }
   };
 

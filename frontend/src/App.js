@@ -243,11 +243,12 @@ function App() {
           packageInfoError={packageInfoError}
         />
 
-        <SearchModal
-          open={searchModalOpen}
-          onClose={handleCloseSearchModal}
+                <SearchModal 
+          open={searchModalOpen} 
+          onClose={handleCloseSearchModal} 
           onPackageClick={handlePackageClick}
           installedPackages={packages}
+          onRefreshInstalledPackages={fetchPackages}
         />
 
                 <UpdateUpgradeModal 
