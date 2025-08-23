@@ -58,10 +58,30 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [], on
     setInstallModalOpen(true);
   };
 
+  const refreshSearchResults = async () => {
+    if (!query.trim()) return;
+
+    try {
+      setSearchLoading(true);
+      setSearchError(null);
+      const response = await fetch(`/api/packages/search/${encodeURIComponent(query.trim())}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (err) {
+      setSearchError(err.message);
+      console.error('Error refreshing search results:', err);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   const handleInstallSuccess = () => {
     // Refresh the search results to update the installed status
     if (query.trim()) {
-      handleSearch({ preventDefault: () => {} });
+      refreshSearchResults();
     }
     // Also refresh the installed packages list from parent
     if (onRefreshInstalledPackages) {
