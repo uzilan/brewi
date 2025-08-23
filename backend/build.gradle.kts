@@ -24,6 +24,7 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
     implementation("io.ktor:ktor-server-swagger:$ktorVersion")
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
     
     // Logging
     implementation("ch.qos.logback:logback-classic:1.4.11")
@@ -31,6 +32,10 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    // Ktor testing
+    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
+    testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    testImplementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
 }
 
 tasks.test {
@@ -49,5 +54,5 @@ tasks.withType<JavaCompile> {
 }
 
 application {
-    mainClass.set("MainKt")
+    mainClass.set("ApplicationServer")
 }

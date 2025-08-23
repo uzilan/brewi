@@ -22,6 +22,7 @@ paths:
   
   /api/packages:
     get:
+      operationId: listPackages
       summary: List installed packages
       description: Returns a list of all packages installed via Homebrew
       responses:
@@ -41,6 +42,40 @@ paths:
                   error:
                     type: string
                     description: Error message
+
+  /api/packages/{packageName}:
+    get:
+      operationId: getPackageInfo
+      summary: Get package information
+      description: Returns detailed information about a specific package
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          description: Name of the package to get information for
+          schema:
+            type: string
+            example: "node"
+      responses:
+        '200':
+          description: Package information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+        '400':
+          description: Bad request - package name is required
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Package name is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
 
 components:
   schemas:
@@ -79,3 +114,23 @@ components:
           description: Package version (if available)
       required:
         - name
+
+    BrewCommandResult:
+      type: object
+      properties:
+        isSuccess:
+          type: boolean
+          description: Whether the command executed successfully
+        output:
+          type: string
+          description: The command output
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if the command failed
+        exitCode:
+          type: integer
+          description: Exit code of the command
+      required:
+        - isSuccess
+        - output
