@@ -75,6 +75,12 @@ function App() {
         isInstalled: true
       }));
       setPackages(packagesWithInstalledFlag);
+      
+      // Start background prefetching of package info
+      if (packagesWithInstalledFlag.length > 0) {
+        console.log(`Starting background prefetch for ${packagesWithInstalledFlag.length} packages...`);
+        prefetchAllPackageInfo(packagesWithInstalledFlag);
+      }
     } catch (err) {
       setError(err.message);
       console.error('Error fetching packages:', err);
@@ -96,17 +102,21 @@ function App() {
     setSnackbarOpen(true);
   };
 
-  const fetchPackageInfo = useCallback(async (packageName) => {
+  const fetchPackageInfo = useCallback(async (packageName, showInUI = true) => {
     // Check if we have cached data for this package
     if (packageInfoCache.has(packageName)) {
       const cachedInfo = packageInfoCache.get(packageName);
-      setPackageInfo(cachedInfo);
+      if (showInUI) {
+        setPackageInfo(cachedInfo);
+      }
       return;
     }
 
     try {
-      setPackageInfoLoading(true);
-      setPackageInfoError(null);
+      if (showInUI) {
+        setPackageInfoLoading(true);
+        setPackageInfoError(null);
+      }
       const response = await fetch(`/api/packages/${packageName}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -120,14 +130,44 @@ function App() {
         return newCache;
       });
       
-      setPackageInfo(data);
+      if (showInUI) {
+        setPackageInfo(data);
+      }
     } catch (err) {
-      setPackageInfoError(err.message);
+      if (showInUI) {
+        setPackageInfoError(err.message);
+      }
       console.error('Error fetching package info:', err);
     } finally {
-      setPackageInfoLoading(false);
+      if (showInUI) {
+        setPackageInfoLoading(false);
+      }
     }
   }, [packageInfoCache]);
+
+  const prefetchPackageInfo = useCallback(async (packageName) => {
+    // Prefetch package info in background without showing in UI
+    await fetchPackageInfo(packageName, false);
+  }, [fetchPackageInfo]);
+
+  const prefetchAllPackageInfo = useCallback(async (packagesList) => {
+    // Prefetch all package info in background with staggered requests
+    const prefetchPromises = packagesList.map((pkg, index) => 
+      new Promise(resolve => {
+        // Stagger requests by 100ms to avoid overwhelming the server
+        setTimeout(() => {
+          prefetchPackageInfo(pkg.name).then(resolve).catch(resolve);
+        }, index * 100);
+      })
+    );
+    
+    // Use Promise.allSettled to handle individual failures gracefully
+    Promise.allSettled(prefetchPromises).then(results => {
+      const successful = results.filter(result => result.status === 'fulfilled').length;
+      const failed = results.filter(result => result.status === 'rejected').length;
+      console.log(`Background prefetch completed: ${successful} successful, ${failed} failed`);
+    });
+  }, [prefetchPackageInfo]);
 
   const handlePackageClick = (pkg) => {
     setSelectedPackage(pkg);
