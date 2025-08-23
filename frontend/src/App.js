@@ -14,13 +14,14 @@ import {
   Chip,
   Snackbar
 } from '@mui/material';
-import { Refresh as RefreshIcon, Search as SearchIcon, Update as UpdateIcon } from '@mui/icons-material';
+import { Refresh as RefreshIcon, Search as SearchIcon, Update as UpdateIcon, LocalHospital as DoctorIcon } from '@mui/icons-material';
 import PackageInfoDialog from './PackageInfoDialog';
 import PackageList from './PackageList';
 import SearchModal from './SearchModal';
 import PackageFilter from './PackageFilter';
 import UpdateUpgradeModal from './UpdateUpgradeModal';
 import UninstallModal from './UninstallModal';
+import DoctorModal from './DoctorModal';
 
 function App() {
   const [packages, setPackages] = useState([]);
@@ -33,6 +34,7 @@ function App() {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [updateUpgradeModalOpen, setUpdateUpgradeModalOpen] = useState(false);
   const [uninstallModalOpen, setUninstallModalOpen] = useState(false);
+  const [doctorModalOpen, setDoctorModalOpen] = useState(false);
   const [selectedPackageForUninstall, setSelectedPackageForUninstall] = useState(null);
   const [filterValue, setFilterValue] = useState('');
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
@@ -309,6 +311,14 @@ function App() {
     setUpdateUpgradeModalOpen(false);
   };
 
+  const handleOpenDoctorModal = () => {
+    setDoctorModalOpen(true);
+  };
+
+  const handleCloseDoctorModal = () => {
+    setDoctorModalOpen(false);
+  };
+
   const handleUninstallClick = (pkg) => {
     setSelectedPackageForUninstall(pkg);
     setUninstallModalOpen(true);
@@ -435,6 +445,15 @@ function App() {
               Update & Upgrade
             </Button>
             <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<DoctorIcon />}
+              onClick={handleOpenDoctorModal}
+              sx={{ minWidth: 120 }}
+            >
+              Doctor
+            </Button>
+            <Button
               variant="contained"
               startIcon={<SearchIcon />}
               onClick={handleOpenSearchModal}
@@ -494,6 +513,11 @@ function App() {
           onClose={handleCloseUninstallModal}
           packageName={selectedPackageForUninstall?.name}
           onUninstallSuccess={handleUninstallSuccess}
+        />
+
+        <DoctorModal
+          open={doctorModalOpen}
+          onClose={handleCloseDoctorModal}
         />
 
         </Box>

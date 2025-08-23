@@ -84,6 +84,12 @@ object ApplicationServer {
                 call.respond(result)
             }
 
+            post("/api/packages/doctor") {
+                log.info("Brew doctor endpoint hit")
+                val result = brewService.runDoctor()
+                call.respond(result)
+            }
+
             get("/api/packages/last-update") {
                 log.info("Get last update time endpoint hit")
                 val result = brewService.getLastUpdateTime()
@@ -172,6 +178,7 @@ object ApplicationServer {
         log.info("Install packages at: http://localhost:8080/api/packages/{packageName}/install")
         log.info("Uninstall packages at: http://localhost:8080/api/packages/{packageName}/uninstall")
         log.info("Update and upgrade at: http://localhost:8080/api/packages/upgrade")
+        log.info("Run brew doctor at: http://localhost:8080/api/packages/doctor")
         log.info("Get last update time at: http://localhost:8080/api/packages/last-update")
         log.info("Swagger UI available at: http://localhost:8080/swagger")
     }

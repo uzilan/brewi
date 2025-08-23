@@ -149,6 +149,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrewCommandResult'
 
+  /api/packages/doctor:
+    post:
+      operationId: runDoctor
+      summary: Run brew doctor
+      description: Runs brew doctor to diagnose and fix common Homebrew issues
+      responses:
+        '200':
+          description: Brew doctor completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+
   /api/packages/{packageName}/install:
     post:
       operationId: installPackage

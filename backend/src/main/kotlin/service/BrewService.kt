@@ -293,6 +293,14 @@ class BrewService {
     }
 
     /**
+     * Executes brew doctor command to diagnose Homebrew issues
+     * @return BrewCommandResult containing the diagnostic output
+     */
+    fun runDoctor(): BrewCommandResult {
+        return executeBrewCommand(listOf("doctor"), 300) // 5 minute timeout for doctor
+    }
+
+    /**
      * Executes a custom brew command
      * @param args The arguments to pass to brew (e.g., ["--version"], ["doctor"])
      * @param timeoutSeconds Timeout in seconds (default: 30)
