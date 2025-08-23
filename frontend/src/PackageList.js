@@ -76,13 +76,20 @@ function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClic
                          {pkg.isInstalled && onUninstallClick && (
                            <Button
                              size="small"
-                             variant="contained"
-                             color="error"
+                             variant="text"
                              onClick={(e) => {
                                e.stopPropagation();
                                onUninstallClick(pkg);
                              }}
-                             sx={{ minWidth: 'auto', px: 1 }}
+                             sx={{ 
+                               minWidth: 'auto', 
+                               px: 1,
+                               color: 'error.main',
+                               '&:hover': {
+                                 backgroundColor: 'error.light',
+                                 color: 'error.contrastText'
+                               }
+                             }}
                            >
                              <DeleteIcon />
                            </Button>
