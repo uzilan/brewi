@@ -54,6 +54,56 @@ class BrewService {
     }
     
     /**
+     * Gets the last update time by checking the Homebrew cache directory
+     * @return BrewCommandResult with the last update information
+     */
+    fun getLastUpdateTime(): BrewCommandResult {
+        return try {
+            // Check the Homebrew cache directory for last update time
+            val homebrewCacheDir = System.getenv("HOMEBREW_CACHE") ?: "${System.getProperty("user.home")}/Library/Caches/Homebrew"
+            val cacheDir = java.io.File(homebrewCacheDir)
+            
+            if (!cacheDir.exists()) {
+                return BrewCommandResult(
+                    isSuccess = false,
+                    output = "",
+                    errorMessage = "Homebrew cache directory not found"
+                )
+            }
+            
+            // Get the most recent modification time of any file in the cache
+            val lastModified = cacheDir.walkTopDown()
+                .filter { it.isFile }
+                .map { it.lastModified() }
+                .maxOrNull()
+            
+            if (lastModified == null) {
+                return BrewCommandResult(
+                    isSuccess = false,
+                    output = "",
+                    errorMessage = "No cache files found"
+                )
+            }
+            
+            val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val lastUpdateStr = dateFormat.format(java.util.Date(lastModified))
+            
+            BrewCommandResult(
+                isSuccess = true,
+                output = lastUpdateStr,
+                exitCode = 0
+            )
+            
+        } catch (e: Exception) {
+            BrewCommandResult(
+                isSuccess = false,
+                output = "",
+                errorMessage = "Failed to get last update time: ${e.message}"
+            )
+        }
+    }
+    
+    /**
      * Executes brew update command to update Homebrew itself
      */
     fun updateBrew(): BrewCommandResult {

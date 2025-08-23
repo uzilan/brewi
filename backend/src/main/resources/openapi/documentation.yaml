@@ -111,6 +111,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrewCommandResult'
 
+  /api/packages/last-update:
+    get:
+      operationId: getLastUpdateTime
+      summary: Get last update time
+      description: Returns the timestamp of when Homebrew was last updated
+      responses:
+        '200':
+          description: Last update time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+
   /api/packages/upgrade:
     post:
       operationId: updateAndUpgrade

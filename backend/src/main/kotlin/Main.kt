@@ -78,6 +78,12 @@ object ApplicationServer {
                 call.respond(result)
             }
 
+            get("/api/packages/last-update") {
+                log.info("Get last update time endpoint hit")
+                val result = brewService.getLastUpdateTime()
+                call.respond(result)
+            }
+
             get("/openapi/documentation.yaml") {
                 try {
                     val content =
@@ -99,6 +105,7 @@ object ApplicationServer {
         log.info("Get package info at: http://localhost:8080/api/packages/{packageName}")
         log.info("Search packages at: http://localhost:8080/api/packages/search/{query}")
         log.info("Update and upgrade at: http://localhost:8080/api/packages/upgrade")
+        log.info("Get last update time at: http://localhost:8080/api/packages/last-update")
         log.info("Swagger UI available at: http://localhost:8080/swagger")
     }
 }
