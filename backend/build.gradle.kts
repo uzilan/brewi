@@ -23,8 +23,12 @@ dependencies {
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
-    implementation("io.ktor:ktor-server-webjars:$ktorVersion")
+    implementation("io.ktor:ktor-server-swagger:$ktorVersion")
     
+    // Logging
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
+
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
 }
@@ -47,5 +51,3 @@ tasks.withType<JavaCompile> {
 application {
     mainClass.set("MainKt")
 }
-
-

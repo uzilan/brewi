@@ -1,14 +1,18 @@
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.application.install
+import io.ktor.server.application.log
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.swagger.swaggerUI
+import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
-import io.ktor.server.response.respondFile
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
-import io.ktor.server.webjars.Webjars
-import io.ktor.http.HttpStatusCode
+import model.BrewListResult
 import service.BrewService
 
 fun main() {
@@ -18,49 +22,39 @@ fun main() {
 
 fun Application.module() {
     val brewService = BrewService()
-    
-    install(Webjars) {
-        path = "/webjars"
+
+    install(ContentNegotiation) {
+        jackson()
     }
-    
+
     routing {
+        // Serve Swagger UI at /swagger using the OpenAPI spec from resources
+        swaggerUI(path = "swagger", swaggerFile = "openapi/documentation.yaml")
         get("/health") {
-            println("Health endpoint hit")
+            log.info("Health endpoint hit")
             call.respondText("OK")
         }
-        
-        get("/swagger") {
-            call.respondFile(java.io.File("/Users/uzilan/dev/brewanator/backend/src/main/resources/static/swagger-ui/index.html"))
+
+        get("/api/packages") {
+            log.info("List packages endpoint hit")
+            val result = brewService.listPackages()
+            call.respond(result)
         }
-        
-        get("/{path...}") {
-            val path = call.parameters.getAll("path")?.joinToString("/") ?: ""
-            
-            // Handle OpenAPI documentation
-            if (path == "openapi/documentation.yaml") {
-                try {
-                    val content = java.io.File("/Users/uzilan/dev/brewanator/backend/src/main/resources/openapi/documentation.yaml").readText()
-                    call.respondText(content)
-                } catch (e: Exception) {
-                    call.respondText("Error reading file: ${e.message}", status = HttpStatusCode.InternalServerError)
-                }
-                return@get
-            }
-            
-            // Handle static files from swagger-ui directory
-            val file = java.io.File("/Users/uzilan/dev/brewanator/backend/src/main/resources/static/swagger-ui/$path")
-            if (file.exists() && file.isFile) {
-                call.respondFile(file)
-            } else {
-                call.respondText("File not found: $path", status = HttpStatusCode.NotFound)
+
+        get("/openapi/documentation.yaml") {
+            try {
+                val content = java.io.File("/Users/uzilan/dev/brewanator/backend/src/main/resources/openapi/documentation.yaml").readText()
+                call.respondText(content)
+            } catch (e: Exception) {
+                log.error("Error reading OpenAPI documentation file: ${e.message}", e)
+                call.respondText("Error reading file: ${e.message}", status = HttpStatusCode.InternalServerError)
             }
         }
     }
-    
-    println("Brewanator backend service initialized")
-    println("BrewService is ready for use")
-    println("Health check available at: http://localhost:8080/health")
-    println("Dark Cat Swagger UI available at: http://localhost:8080/swagger")
+
+    log.info("Brewanator backend service initialized")
+    log.info("BrewService is ready for use")
+    log.info("Health check available at: http://localhost:8080/health")
+    log.info("List packages available at: http://localhost:8080/api/packages")
+    log.info("Swagger UI available at: http://localhost:8080/swagger")
 }
-
-

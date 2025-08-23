@@ -19,3 +19,63 @@ paths:
               schema:
                 type: string
                 example: "OK"
+  
+  /api/packages:
+    get:
+      summary: List installed packages
+      description: Returns a list of all packages installed via Homebrew
+      responses:
+        '200':
+          description: List of installed packages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewListResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+
+components:
+  schemas:
+    BrewListResult:
+      type: object
+      properties:
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrewPackage'
+          description: List of installed packages
+        isSuccess:
+          type: boolean
+          description: Whether the command executed successfully
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if the command failed
+        totalCount:
+          type: integer
+          description: Total number of packages
+      required:
+        - packages
+        - isSuccess
+        - totalCount
+    
+    BrewPackage:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Package name
+        version:
+          type: string
+          nullable: true
+          description: Package version (if available)
+      required:
+        - name
