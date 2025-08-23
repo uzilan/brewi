@@ -107,6 +107,29 @@ object ApplicationServer {
                 }
             }
 
+            delete("/api/packages/{packageName}/uninstall") {
+                val packageName = call.parameters["packageName"]
+                if (packageName.isNullOrBlank()) {
+                    call.respondText("Package name is required", status = HttpStatusCode.BadRequest)
+                    return@delete
+                }
+                log.info("Uninstall package endpoint hit for package: $packageName")
+                try {
+                    val result = brewService.uninstallPackage(packageName)
+                    log.info("Uninstall package result for $packageName: success=${result.isSuccess}, exitCode=${result.exitCode}")
+                    call.respond(result)
+                } catch (e: Exception) {
+                    log.error("Error uninstalling package $packageName: ${e.message}", e)
+                    val errorResult = model.BrewCommandResult(
+                        isSuccess = false,
+                        output = "",
+                        errorMessage = "Failed to uninstall package: ${e.message}",
+                        exitCode = -1
+                    )
+                    call.respond(errorResult)
+                }
+            }
+
             get("/openapi/documentation.yaml") {
                 try {
                     val content =
@@ -127,6 +150,8 @@ object ApplicationServer {
         log.info("List packages available at: http://localhost:8080/api/packages")
         log.info("Get package info at: http://localhost:8080/api/packages/{packageName}")
         log.info("Search packages at: http://localhost:8080/api/packages/search/{query}")
+        log.info("Install packages at: http://localhost:8080/api/packages/{packageName}/install")
+        log.info("Uninstall packages at: http://localhost:8080/api/packages/{packageName}/uninstall")
         log.info("Update and upgrade at: http://localhost:8080/api/packages/upgrade")
         log.info("Get last update time at: http://localhost:8080/api/packages/last-update")
         log.info("Swagger UI available at: http://localhost:8080/swagger")

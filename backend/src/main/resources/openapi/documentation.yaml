@@ -183,6 +183,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrewCommandResult'
 
+  /api/packages/{packageName}/uninstall:
+    delete:
+      operationId: uninstallPackage
+      summary: Uninstall a package
+      description: Uninstalls a package using the brew uninstall command
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          description: Name of the package to uninstall
+          schema:
+            type: string
+            example: "node"
+      responses:
+        '200':
+          description: Package uninstallation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+        '400':
+          description: Bad request - package name is required
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Package name is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewCommandResult'
+
 components:
   schemas:
     BrewListResult:

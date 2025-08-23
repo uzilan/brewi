@@ -54,6 +54,13 @@ class BrewService {
     }
     
     /**
+     * Executes brew uninstall command for a specific package
+     */
+    fun uninstallPackage(packageName: String): BrewCommandResult {
+        return executeBrewCommand(listOf("uninstall", packageName), 300) // 5 minute timeout for uninstalls
+    }
+    
+    /**
      * Executes brew outdated command to check for updates
      */
     fun checkOutdated(): BrewCommandResult {
