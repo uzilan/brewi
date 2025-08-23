@@ -8,9 +8,9 @@ import {
   Chip,
   Button
 } from '@mui/material';
-import { Info as InfoIcon, CheckCircle as CheckCircleIcon, Download as DownloadIcon } from '@mui/icons-material';
+import { Info as InfoIcon, CheckCircle as CheckCircleIcon, Download as DownloadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
-function PackageList({ packages, onPackageClick, onInstallClick }) {
+function PackageList({ packages, onPackageClick, onInstallClick, onUninstallClick }) {
   if (packages.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -80,6 +80,21 @@ function PackageList({ packages, onPackageClick, onInstallClick }) {
                              sx={{ minWidth: 'auto', px: 1 }}
                            >
                              Install
+                           </Button>
+                         )}
+                         {pkg.isInstalled && onUninstallClick && (
+                           <Button
+                             size="small"
+                             variant="contained"
+                             color="error"
+                             startIcon={<DeleteIcon />}
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               onUninstallClick(pkg);
+                             }}
+                             sx={{ minWidth: 'auto', px: 1 }}
+                           >
+                             Uninstall
                            </Button>
                          )}
                        </Box>

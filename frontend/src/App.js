@@ -19,6 +19,7 @@ import PackageList from './PackageList';
 import SearchModal from './SearchModal';
 import PackageFilter from './PackageFilter';
 import UpdateUpgradeModal from './UpdateUpgradeModal';
+import UninstallModal from './UninstallModal';
 
 function App() {
   const [packages, setPackages] = useState([]);
@@ -30,6 +31,8 @@ function App() {
   const [packageInfoError, setPackageInfoError] = useState(null);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [updateUpgradeModalOpen, setUpdateUpgradeModalOpen] = useState(false);
+  const [uninstallModalOpen, setUninstallModalOpen] = useState(false);
+  const [selectedPackageForUninstall, setSelectedPackageForUninstall] = useState(null);
   const [filterValue, setFilterValue] = useState('');
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
 
@@ -118,6 +121,20 @@ function App() {
 
   const handleCloseUpdateUpgradeModal = () => {
     setUpdateUpgradeModalOpen(false);
+  };
+
+  const handleUninstallClick = (pkg) => {
+    setSelectedPackageForUninstall(pkg);
+    setUninstallModalOpen(true);
+  };
+
+  const handleCloseUninstallModal = () => {
+    setUninstallModalOpen(false);
+    setSelectedPackageForUninstall(null);
+  };
+
+  const handleUninstallSuccess = () => {
+    fetchPackages();
   };
 
   const handleFilterChange = (value) => {
@@ -229,9 +246,10 @@ function App() {
           totalCount={packages.length}
         />
 
-        <PackageList 
+                <PackageList 
           packages={getFilteredPackages()} 
-          onPackageClick={handlePackageClick} 
+          onPackageClick={handlePackageClick}
+          onUninstallClick={handleUninstallClick}
         />
 
         <PackageInfoDialog
@@ -255,6 +273,13 @@ function App() {
           open={updateUpgradeModalOpen} 
           onClose={handleCloseUpdateUpgradeModal}
           onUpdateSuccess={fetchLastUpdateTime}
+        />
+        
+        <UninstallModal
+          open={uninstallModalOpen}
+          onClose={handleCloseUninstallModal}
+          packageName={selectedPackageForUninstall?.name}
+          onUninstallSuccess={handleUninstallSuccess}
         />
       </Container>
     </Box>
