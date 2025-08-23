@@ -274,29 +274,31 @@ function App() {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            Error: {error}
-          </Alert>
-        )}
+      <Box sx={{ display: 'flex', py: 4 }}>
+        {/* Main Content */}
+        <Box sx={{ flex: 1, px: 2 }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              Error: {error}
+            </Alert>
+          )}
 
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              Installed Packages
-            </Typography>
-            <Box display="flex" gap={1} alignItems="center">
-              <Chip 
-                label={`${packages.length} packages`} 
-                color="primary" 
-                variant="outlined"
-              />
-              {lastUpdateTime && (
+          <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="h4" component="h1" gutterBottom>
+                Installed Packages
+              </Typography>
+              <Box display="flex" gap={1} alignItems="center">
                 <Chip 
-                  label={`Last updated: ${lastUpdateTime}`}
-                  color="secondary"
+                  label={`${packages.length} packages`} 
+                  color="primary" 
                   variant="outlined"
+                />
+                {lastUpdateTime && (
+                  <Chip 
+                    label={`Last updated: ${lastUpdateTime}`}
+                    color="secondary"
+                    variant="outlined"
                   size="small"
                 />
               )}
@@ -366,21 +368,55 @@ function App() {
           onUninstallSuccess={handleUninstallSuccess}
         />
 
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={4000}
-          onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        </Box>
+
+        {/* Debug Panel - Cached Packages */}
+        <Box sx={{ width: 300, px: 2, borderLeft: 1, borderColor: 'divider' }}>
+          <Typography variant="h6" gutterBottom>
+            Debug: Cached Packages
+          </Typography>
+          <Box sx={{ mb: 2 }}>
+            <Chip 
+              label={`${packageInfoCache.size} cached`} 
+              color="info" 
+              variant="outlined"
+              size="small"
+            />
+          </Box>
+          <Box sx={{ maxHeight: '70vh', overflow: 'auto' }}>
+            {Array.from(packageInfoCache.keys()).map((packageName) => (
+              <Chip
+                key={packageName}
+                label={packageName}
+                size="small"
+                variant="outlined"
+                sx={{ m: 0.5 }}
+                color="success"
+              />
+            ))}
+            {packageInfoCache.size === 0 && (
+              <Typography variant="body2" color="text.secondary">
+                No packages cached yet
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbarOpen(false)} 
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
         >
-          <Alert 
-            onClose={() => setSnackbarOpen(false)} 
-            severity={snackbarSeverity}
-            sx={{ width: '100%' }}
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-      </Container>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
