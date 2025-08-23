@@ -48,6 +48,8 @@ function App() {
     fetchLastUpdateTime();
   }, []);
 
+
+
   const fetchLastUpdateTime = async () => {
     try {
       const response = await fetch('/api/packages/last-update');
@@ -80,7 +82,6 @@ function App() {
       
       // Start background prefetching of package info
       if (packagesWithInstalledFlag.length > 0) {
-        console.log(`Starting background prefetch for ${packagesWithInstalledFlag.length} packages...`);
         prefetchAllPackageInfo(packagesWithInstalledFlag);
       }
     } catch (err) {
@@ -95,9 +96,8 @@ function App() {
     await fetchPackages();
     await fetchLastUpdateTime();
     // Clear cache since package information might have changed
+    // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
-    setDependencyMap(new Map());
-    setDependentsMap(new Map());
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -106,36 +106,7 @@ function App() {
     setSnackbarOpen(true);
   };
 
-  const updateDependencyMapsForPackage = useCallback((packageName, dependencies) => {
-    setDependencyMap(prevMap => {
-      const newMap = new Map(prevMap);
-      newMap.set(packageName, new Set(dependencies));
-      return newMap;
-    });
-    
-    setDependentsMap(prevMap => {
-      const newMap = new Map(prevMap);
-      
-      // Remove this package from all dependents lists first
-      newMap.forEach((dependents, pkg) => {
-        dependents.delete(packageName);
-      });
-      
-      // Add this package to dependents of packages it depends on
-      dependencies.forEach(dep => {
-        const currentDependents = newMap.get(dep) || new Set();
-        currentDependents.add(packageName);
-        newMap.set(dep, currentDependents);
-      });
-      
-      // Ensure this package is in the map
-      if (!newMap.has(packageName)) {
-        newMap.set(packageName, new Set());
-      }
-      
-      return newMap;
-    });
-  }, []);
+
 
   const fetchPackageInfo = useCallback(async (packageName, showInUI = true) => {
     // Check if we have cached data for this package
@@ -171,10 +142,7 @@ function App() {
         return newCache;
       });
       
-      // Update dependency maps
-      if (data.dependencies) {
-        updateDependencyMapsForPackage(packageName, data.dependencies);
-      }
+      // Note: Dependency maps will be updated by buildDependencyMaps after prefetching
       
       if (showInUI) {
         // Enhance with cross-referenced dependents
@@ -194,14 +162,11 @@ function App() {
         setPackageInfoLoading(false);
       }
     }
-  }, [packageInfoCache, dependentsMap, updateDependencyMapsForPackage]);
+  }, [packageInfoCache, dependentsMap]);
 
-  const prefetchPackageInfo = useCallback(async (packageName) => {
-    // Prefetch package info in background without showing in UI
-    await fetchPackageInfo(packageName, false);
-  }, [fetchPackageInfo]);
 
-  const buildDependencyMaps = useCallback((packagesList) => {
+
+  const buildDependencyMapsFromData = useCallback((packagesList, prefetchedData) => {
     const newDependencyMap = new Map();
     const newDependentsMap = new Map();
     
@@ -210,11 +175,11 @@ function App() {
       newDependentsMap.set(pkg.name, new Set());
     });
     
-    // Build dependency map from cached package info
+    // Build dependency map from prefetched data
     packagesList.forEach(pkg => {
-      const cachedInfo = packageInfoCache.get(pkg.name);
-      if (cachedInfo && cachedInfo.dependencies) {
-        const dependencies = new Set(cachedInfo.dependencies);
+      const packageData = prefetchedData.get(pkg.name);
+      if (packageData && packageData.dependencies) {
+        const dependencies = new Set(packageData.dependencies);
         newDependencyMap.set(pkg.name, dependencies);
         
         // Update dependents map
@@ -230,38 +195,81 @@ function App() {
     
     setDependencyMap(newDependencyMap);
     setDependentsMap(newDependentsMap);
+  }, []);
+
+  const buildDependencyMaps = useCallback((packagesList) => {
+    const newDependencyMap = new Map();
+    const newDependentsMap = new Map();
+    
+    console.log('Building dependency maps...', new Date().toISOString(), 'for', packagesList.length, 'packages');
+    
+    // Initialize dependents map for all packages
+    packagesList.forEach(pkg => {
+      newDependentsMap.set(pkg.name, new Set());
+    });
+    
+    console.log('Cache size when building maps:', packageInfoCache.size);
+    
+    // Build dependency map from cached package info
+    packagesList.forEach(pkg => {
+      const cachedInfo = packageInfoCache.get(pkg.name);
+      if (cachedInfo && cachedInfo.dependencies) {
+        const dependencies = new Set(cachedInfo.dependencies);
+        newDependencyMap.set(pkg.name, dependencies);
+        console.log(`${pkg.name}: ${dependencies.size} dependencies`);
+        
+        // Update dependents map
+        dependencies.forEach(dep => {
+          const currentDependents = newDependentsMap.get(dep) || new Set();
+          currentDependents.add(pkg.name);
+          newDependentsMap.set(dep, currentDependents);
+        });
+      } else {
+        newDependencyMap.set(pkg.name, new Set());
+        console.log(`${pkg.name}: no cached info or no dependencies`);
+      }
+    });
+    
+    console.log('Setting dependency maps - new size:', newDependencyMap.size, 'at', new Date().toISOString());
+    setDependencyMap(newDependencyMap);
+    setDependentsMap(newDependentsMap);
     
     console.log(`Dependency maps built: ${newDependencyMap.size} packages`);
     console.log(`Dependents map size: ${newDependentsMap.size}`);
+    
+    // Debug: Check if maps have any data
+    let totalDeps = 0;
+    newDependencyMap.forEach((deps, pkg) => {
+      totalDeps += deps.size;
+    });
+    console.log(`Total dependencies across all packages: ${totalDeps}`);
   }, [packageInfoCache]);
 
-  const removeFromDependencyMaps = useCallback((packageName) => {
-    setDependencyMap(prevMap => {
-      const newMap = new Map(prevMap);
-      newMap.delete(packageName);
-      return newMap;
-    });
-    
-    setDependentsMap(prevMap => {
-      const newMap = new Map(prevMap);
-      newMap.delete(packageName);
-      
-      // Remove this package from all dependents lists
-      newMap.forEach((dependents, pkg) => {
-        dependents.delete(packageName);
-      });
-      
-      return newMap;
-    });
-  }, []);
+
 
   const prefetchAllPackageInfo = useCallback(async (packagesList) => {
     // Prefetch all package info in background with staggered requests
     const prefetchPromises = packagesList.map((pkg, index) => 
-      new Promise(resolve => {
+      new Promise(async (resolve) => {
         // Stagger requests by 100ms to avoid overwhelming the server
-        setTimeout(() => {
-          prefetchPackageInfo(pkg.name).then(resolve).catch(resolve);
+        setTimeout(async () => {
+          try {
+            const response = await fetch(`/api/packages/${pkg.name}`);
+            if (response.ok) {
+              const data = await response.json();
+              // Cache the package info
+              setPackageInfoCache(prevCache => {
+                const newCache = new Map(prevCache);
+                newCache.set(pkg.name, data);
+                return newCache;
+              });
+              resolve({ packageName: pkg.name, data });
+            } else {
+              resolve({ packageName: pkg.name, error: 'Failed to fetch' });
+            }
+          } catch (err) {
+            resolve({ packageName: pkg.name, error: err.message });
+          }
         }, index * 100);
       })
     );
@@ -270,16 +278,38 @@ function App() {
     Promise.allSettled(prefetchPromises).then(results => {
       const successful = results.filter(result => result.status === 'fulfilled').length;
       const failed = results.filter(result => result.status === 'rejected').length;
-      console.log(`Background prefetch completed: ${successful} successful, ${failed} failed`);
       
-      // Build dependency maps after prefetching is complete
-      buildDependencyMaps(packagesList);
+      // Collect all successful prefetched data
+      const prefetchedData = new Map();
+      results.forEach(result => {
+        if (result.status === 'fulfilled' && result.value.data) {
+          prefetchedData.set(result.value.packageName, result.value.data);
+        }
+      });
+      
+      // Build dependency maps directly from prefetched data
+      buildDependencyMapsFromData(packagesList, prefetchedData);
     });
-  }, [prefetchPackageInfo, buildDependencyMaps]);
+  }, []);
 
   const handlePackageClick = (pkg) => {
     setSelectedPackage(pkg);
     fetchPackageInfo(pkg.name, true);
+  };
+
+  const handleDependencyClick = (packageName) => {
+    // Find the package in the current packages list
+    const pkg = packages.find(p => p.name === packageName);
+    if (pkg) {
+      setSelectedPackage(pkg);
+      fetchPackageInfo(packageName, true);
+    } else {
+      // If the package is not in the current list (e.g., it's a dependency but not installed),
+      // create a temporary package object and show its info
+      const tempPkg = { name: packageName, isInstalled: false };
+      setSelectedPackage(tempPkg);
+      fetchPackageInfo(packageName, true);
+    }
   };
 
   const handleCloseDialog = () => {
@@ -318,16 +348,16 @@ function App() {
     const packageName = selectedPackageForUninstall?.name;
     fetchPackages();
     // Clear cache since dependencies might have changed
+    // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
-    removeFromDependencyMaps(packageName);
     showSnackbar(`Successfully uninstalled ${packageName}`, 'success');
   };
 
   const handleInstallSuccess = (packageName) => {
     fetchPackages();
     // Clear cache since dependencies might have changed
+    // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
-    // Note: New package dependencies will be updated when it's fetched
     showSnackbar(`Successfully installed ${packageName}`, 'success');
   };
 
@@ -446,6 +476,9 @@ function App() {
           packages={getFilteredPackages()} 
           onPackageClick={handlePackageClick}
           onUninstallClick={handleUninstallClick}
+          onDependencyClick={handleDependencyClick}
+          dependencyMap={dependencyMap}
+          dependentsMap={dependentsMap}
         />
 
         <PackageInfoDialog
@@ -455,6 +488,7 @@ function App() {
           packageInfo={packageInfo}
           packageInfoLoading={packageInfoLoading}
           packageInfoError={packageInfoError}
+          onDependencyClick={handleDependencyClick}
         />
 
                 <SearchModal 
@@ -464,6 +498,9 @@ function App() {
           installedPackages={packages}
           onRefreshInstalledPackages={fetchPackages}
           onInstallSuccess={handleInstallSuccess}
+          onDependencyClick={handleDependencyClick}
+          dependencyMap={dependencyMap}
+          dependentsMap={dependentsMap}
         />
 
                 <UpdateUpgradeModal 

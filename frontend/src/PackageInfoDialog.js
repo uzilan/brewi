@@ -21,7 +21,8 @@ function PackageInfoDialog({
   selectedPackage, 
   packageInfo, 
   packageInfoLoading, 
-  packageInfoError 
+  packageInfoError,
+  onDependencyClick
 }) {
   return (
     <Dialog 
@@ -66,6 +67,18 @@ function PackageInfoDialog({
                       size="small" 
                       variant="outlined"
                       color="primary"
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'primary.light',
+                          color: 'primary.contrastText'
+                        }
+                      }}
+                      onClick={() => {
+                        if (onDependencyClick) {
+                          onDependencyClick(dep);
+                        }
+                      }}
                     />
                   ))}
                 </Box>
@@ -91,6 +104,18 @@ function PackageInfoDialog({
                       size="small" 
                       variant="outlined"
                       color="secondary"
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'secondary.light',
+                          color: 'secondary.contrastText'
+                        }
+                      }}
+                      onClick={() => {
+                        if (onDependencyClick) {
+                          onDependencyClick(dep);
+                        }
+                      }}
                     />
                   ))}
                 </Box>

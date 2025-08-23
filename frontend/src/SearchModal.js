@@ -16,7 +16,7 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import PackageList from './PackageList';
 import InstallModal from './InstallModal';
 
-function SearchModal({ open, onClose, onPackageClick, installedPackages = [], onRefreshInstalledPackages, onInstallSuccess }) {
+function SearchModal({ open, onClose, onPackageClick, installedPackages = [], onRefreshInstalledPackages, onInstallSuccess, onDependencyClick, dependencyMap, dependentsMap }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -228,6 +228,9 @@ function SearchModal({ open, onClose, onPackageClick, installedPackages = [], on
                 packages={parseSearchResults(searchResults)} 
                 onPackageClick={handlePackageClick}
                 onInstallClick={handleInstallClick}
+                onDependencyClick={onDependencyClick}
+                dependencyMap={dependencyMap}
+                dependentsMap={dependentsMap}
               />
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>
