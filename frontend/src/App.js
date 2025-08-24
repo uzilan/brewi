@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Container,
+  Refresh as RefreshIcon,
+  Search as SearchIcon,
+  Update as UpdateIcon,
+  LocalHospital as DoctorIcon,
+} from '@mui/icons-material';
+import {
   Typography,
-  Card,
-  CardContent,
-  Grid,
   Box,
   CircularProgress,
   Alert,
@@ -12,16 +13,17 @@ import {
   AppBar,
   Toolbar,
   Chip,
-  Snackbar
+  Snackbar,
 } from '@mui/material';
-import { Refresh as RefreshIcon, Search as SearchIcon, Update as UpdateIcon, LocalHospital as DoctorIcon } from '@mui/icons-material';
+import { useState, useEffect, useCallback, useRef } from 'react';
+
+import DoctorModal from './DoctorModal';
+import PackageFilter from './PackageFilter';
 import PackageInfoDialog from './PackageInfoDialog';
 import PackageList from './PackageList';
 import SearchModal from './SearchModal';
-import PackageFilter from './PackageFilter';
-import UpdateUpgradeModal from './UpdateUpgradeModal';
 import UninstallModal from './UninstallModal';
-import DoctorModal from './DoctorModal';
+import UpdateUpgradeModal from './UpdateUpgradeModal';
 
 function App() {
   const [packages, setPackages] = useState([]);
@@ -31,26 +33,32 @@ function App() {
   const [packageInfo, setPackageInfo] = useState(null);
   const [packageInfoLoading, setPackageInfoLoading] = useState(false);
   const [packageInfoError, setPackageInfoError] = useState(null);
+  const [packageCommands, setPackageCommands] = useState(null);
+  const [packageCommandsLoading, setPackageCommandsLoading] = useState(false);
+  const [packageCommandsError, setPackageCommandsError] = useState(null);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [updateUpgradeModalOpen, setUpdateUpgradeModalOpen] = useState(false);
   const [uninstallModalOpen, setUninstallModalOpen] = useState(false);
   const [doctorModalOpen, setDoctorModalOpen] = useState(false);
-  const [selectedPackageForUninstall, setSelectedPackageForUninstall] = useState(null);
+  const [selectedPackageForUninstall, setSelectedPackageForUninstall] =
+    useState(null);
   const [filterValue, setFilterValue] = useState('');
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [packageInfoCache, setPackageInfoCache] = useState(new Map());
+  const [packageCommandsCache, setPackageCommandsCache] = useState(new Map());
   const [dependencyMap, setDependencyMap] = useState(new Map()); // package -> dependencies
   const [dependentsMap, setDependentsMap] = useState(new Map()); // package -> dependents
+
+  // Ref to store the fetchPackageCommands function to avoid circular dependencies
+  const fetchPackageCommandsRef = useRef();
 
   useEffect(() => {
     fetchPackages();
     fetchLastUpdateTime();
   }, []);
-
-
 
   const fetchLastUpdateTime = async () => {
     try {
@@ -78,10 +86,10 @@ function App() {
       // Add isInstalled: true to all packages since they are installed packages
       const packagesWithInstalledFlag = (data.packages || []).map(pkg => ({
         ...pkg,
-        isInstalled: true
+        isInstalled: true,
       }));
       setPackages(packagesWithInstalledFlag);
-      
+
       // Start background prefetching of package info
       if (packagesWithInstalledFlag.length > 0) {
         prefetchAllPackageInfo(packagesWithInstalledFlag);
@@ -100,6 +108,7 @@ function App() {
     // Clear cache since package information might have changed
     // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
+    setPackageCommandsCache(new Map());
     setDependencyMap(new Map());
     setDependentsMap(new Map());
   };
@@ -110,182 +119,258 @@ function App() {
     setSnackbarOpen(true);
   };
 
-
-
-  const fetchPackageInfo = useCallback(async (packageName, showInUI = true) => {
-    // Check if we have cached data for this package
-    if (packageInfoCache.has(packageName)) {
-      const cachedInfo = packageInfoCache.get(packageName);
-      if (showInUI) {
-        // Enhance cached data with cross-referenced dependents
-        const enhancedInfo = {
-          ...cachedInfo,
-          dependents: Array.from(dependentsMap.get(packageName) || [])
-        };
-        setPackageInfo(enhancedInfo);
-      }
-      return;
-    }
-
-    try {
-      if (showInUI) {
-        setPackageInfoLoading(true);
-        setPackageInfoError(null);
-      }
-      
-      const response = await fetch(`/api/packages/${packageName}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Cache the package info
-      setPackageInfoCache(prevCache => {
-        const newCache = new Map(prevCache);
-        newCache.set(packageName, data);
-        return newCache;
-      });
-      
-      // Update dependency maps for this package
-      setDependencyMap(prevDependencyMap => {
-        const newDependencyMap = new Map(prevDependencyMap);
-        if (data.dependencies) {
-          const dependencies = new Set(data.dependencies);
-          newDependencyMap.set(packageName, dependencies);
+  const fetchPackageCommands = useCallback(
+    async (packageName, showInUI = true) => {
+      // Check if we have cached data for this package
+      if (packageCommandsCache.has(packageName)) {
+        const cachedCommands = packageCommandsCache.get(packageName);
+        if (showInUI) {
+          setPackageCommands(cachedCommands);
         }
-        return newDependencyMap;
-      });
-      
-      setDependentsMap(prevDependentsMap => {
-        const newDependentsMap = new Map(prevDependentsMap);
-        if (data.dependencies) {
-          // Update dependents map for each dependency
-          data.dependencies.forEach(dep => {
-            const currentDependents = newDependentsMap.get(dep) || new Set();
-            currentDependents.add(packageName);
-            newDependentsMap.set(dep, currentDependents);
-          });
+        return cachedCommands;
+      }
+
+      try {
+        if (showInUI) {
+          setPackageCommandsLoading(true);
+          setPackageCommandsError(null);
         }
-        return newDependentsMap;
-      });
-      
-      if (showInUI) {
-        // Enhance with cross-referenced dependents
-        const enhancedInfo = {
-          ...data,
-          dependents: Array.from(dependentsMap.get(packageName) || [])
-        };
-        setPackageInfo(enhancedInfo);
+
+        const response = await fetch(`/api/packages/${packageName}/commands`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Cache the package commands
+        setPackageCommandsCache(prevCache => {
+          const newCache = new Map(prevCache);
+          newCache.set(packageName, data);
+          return newCache;
+        });
+
+        if (showInUI) {
+          setPackageCommands(data);
+        }
+
+        return data;
+      } catch (err) {
+        if (showInUI) {
+          setPackageCommandsError(err.message);
+        }
+        console.error('Error fetching package commands:', err);
+        return null;
+      } finally {
+        if (showInUI) {
+          setPackageCommandsLoading(false);
+        }
       }
-    } catch (err) {
-      if (showInUI) {
-        setPackageInfoError(err.message);
+    },
+    [packageCommandsCache]
+  );
+
+  // Store the function in ref to avoid circular dependencies
+  useEffect(() => {
+    fetchPackageCommandsRef.current = fetchPackageCommands;
+  }, [fetchPackageCommands]);
+
+  const fetchPackageInfo = useCallback(
+    async (packageName, showInUI = true) => {
+      // Check if we have cached data for this package
+      if (packageInfoCache.has(packageName)) {
+        const cachedInfo = packageInfoCache.get(packageName);
+        if (showInUI) {
+          // Enhance cached data with cross-referenced dependents
+          const enhancedInfo = {
+            ...cachedInfo,
+            dependents: Array.from(dependentsMap.get(packageName) || []),
+          };
+          setPackageInfo(enhancedInfo);
+
+          // Also set cached commands if available
+          if (packageCommandsCache.has(packageName)) {
+            setPackageCommands(packageCommandsCache.get(packageName));
+          }
+        }
+        return;
       }
-      console.error('Error fetching package info:', err);
-    } finally {
-      if (showInUI) {
-        setPackageInfoLoading(false);
+
+      try {
+        if (showInUI) {
+          setPackageInfoLoading(true);
+          setPackageInfoError(null);
+        }
+
+        const response = await fetch(`/api/packages/${packageName}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Cache the package info
+        setPackageInfoCache(prevCache => {
+          const newCache = new Map(prevCache);
+          newCache.set(packageName, data);
+          return newCache;
+        });
+
+        // Update dependency maps for this package
+        setDependencyMap(prevDependencyMap => {
+          const newDependencyMap = new Map(prevDependencyMap);
+          if (data.dependencies) {
+            const dependencies = new Set(data.dependencies);
+            newDependencyMap.set(packageName, dependencies);
+          }
+          return newDependencyMap;
+        });
+
+        setDependentsMap(prevDependentsMap => {
+          const newDependentsMap = new Map(prevDependentsMap);
+          if (data.dependencies) {
+            // Update dependents map for each dependency
+            data.dependencies.forEach(dep => {
+              const currentDependents = newDependentsMap.get(dep) || new Set();
+              currentDependents.add(packageName);
+              newDependentsMap.set(dep, currentDependents);
+            });
+          }
+          return newDependentsMap;
+        });
+
+        if (showInUI) {
+          // Enhance with cross-referenced dependents
+          const enhancedInfo = {
+            ...data,
+            dependents: Array.from(dependentsMap.get(packageName) || []),
+          };
+          setPackageInfo(enhancedInfo);
+
+          // Also fetch commands for this package (don't show loading in UI for commands)
+          // Use ref to avoid circular dependency
+          if (fetchPackageCommandsRef.current) {
+            fetchPackageCommandsRef.current(packageName, false);
+          }
+        }
+      } catch (err) {
+        if (showInUI) {
+          setPackageInfoError(err.message);
+        }
+        console.error('Error fetching package info:', err);
+      } finally {
+        if (showInUI) {
+          setPackageInfoLoading(false);
+        }
       }
-    }
-  }, [packageInfoCache, dependentsMap]);
+    },
+    [packageInfoCache, packageCommandsCache, dependentsMap]
+  );
 
-
-
-
-
-
-
-
-
-  const prefetchAllPackageInfo = useCallback(async (packagesList) => {
+  const prefetchAllPackageInfo = useCallback(async packagesList => {
     // Initialize dependency maps with empty sets for all packages
     const initialDependencyMap = new Map();
     const initialDependentsMap = new Map();
-    
+
     packagesList.forEach(pkg => {
       initialDependencyMap.set(pkg.name, new Set());
       initialDependentsMap.set(pkg.name, new Set());
     });
-    
+
     setDependencyMap(initialDependencyMap);
     setDependentsMap(initialDependentsMap);
-    
+
     // Prefetch all package info in background with staggered requests
-    const prefetchPromises = packagesList.map((pkg, index) => 
-      new Promise(async (resolve) => {
-        // Stagger requests by 100ms to avoid overwhelming the server
-        setTimeout(async () => {
-          try {
-            const response = await fetch(`/api/packages/${pkg.name}`);
-            if (response.ok) {
-              const data = await response.json();
-              
-              // Cache the package info
-              setPackageInfoCache(prevCache => {
-                const newCache = new Map(prevCache);
-                newCache.set(pkg.name, data);
-                return newCache;
-              });
-              
-              // Update dependency maps incrementally as each package is fetched
-              setDependencyMap(prevDependencyMap => {
-                const newDependencyMap = new Map(prevDependencyMap);
-                if (data.dependencies) {
-                  const dependencies = new Set(data.dependencies);
-                  newDependencyMap.set(pkg.name, dependencies);
+    const prefetchPromises = packagesList.map(
+      (pkg, index) =>
+        new Promise(resolve => {
+          // Stagger requests by 100ms to avoid overwhelming the server
+          setTimeout(async () => {
+            try {
+              const response = await fetch(`/api/packages/${pkg.name}`);
+              if (response.ok) {
+                const data = await response.json();
+
+                // Cache the package info
+                setPackageInfoCache(prevCache => {
+                  const newCache = new Map(prevCache);
+                  newCache.set(pkg.name, data);
+                  return newCache;
+                });
+
+                // Update dependency maps incrementally as each package is fetched
+                setDependencyMap(prevDependencyMap => {
+                  const newDependencyMap = new Map(prevDependencyMap);
+                  if (data.dependencies) {
+                    const dependencies = new Set(data.dependencies);
+                    newDependencyMap.set(pkg.name, dependencies);
+                  }
+                  return newDependencyMap;
+                });
+
+                setDependentsMap(prevDependentsMap => {
+                  const newDependentsMap = new Map(prevDependentsMap);
+                  if (data.dependencies) {
+                    // Update dependents map for each dependency
+                    data.dependencies.forEach(dep => {
+                      const currentDependents =
+                        newDependentsMap.get(dep) || new Set();
+                      currentDependents.add(pkg.name);
+                      newDependentsMap.set(dep, currentDependents);
+                    });
+                  }
+                  return newDependentsMap;
+                });
+
+                // Also fetch and cache commands for this package
+                // Use ref to avoid circular dependency
+                if (fetchPackageCommandsRef.current) {
+                  fetchPackageCommandsRef.current(pkg.name, false);
                 }
-                return newDependencyMap;
-              });
-              
-              setDependentsMap(prevDependentsMap => {
-                const newDependentsMap = new Map(prevDependentsMap);
-                if (data.dependencies) {
-                  // Update dependents map for each dependency
-                  data.dependencies.forEach(dep => {
-                    const currentDependents = newDependentsMap.get(dep) || new Set();
-                    currentDependents.add(pkg.name);
-                    newDependentsMap.set(dep, currentDependents);
-                  });
-                }
-                return newDependentsMap;
-              });
-              
-              resolve({ packageName: pkg.name, data });
-            } else {
-              resolve({ packageName: pkg.name, error: 'Failed to fetch' });
+
+                resolve({ packageName: pkg.name, data });
+              } else {
+                resolve({ packageName: pkg.name, error: 'Failed to fetch' });
+              }
+            } catch (err) {
+              resolve({ packageName: pkg.name, error: err.message });
             }
-          } catch (err) {
-            resolve({ packageName: pkg.name, error: err.message });
-          }
-        }, index * 100);
-      })
+          }, index * 100);
+        })
     );
-    
+
     // Use Promise.allSettled to handle individual failures gracefully
     Promise.allSettled(prefetchPromises).then(results => {
-      const successful = results.filter(result => result.status === 'fulfilled').length;
-      const failed = results.filter(result => result.status === 'rejected').length;
-      console.log(`Prefetch completed: ${successful} successful, ${failed} failed`);
+      const successful = results.filter(
+        result => result.status === 'fulfilled'
+      ).length;
+      const failed = results.filter(
+        result => result.status === 'rejected'
+      ).length;
+      console.log(
+        `Prefetch completed: ${successful} successful, ${failed} failed`
+      );
     });
   }, []);
 
-  const handlePackageClick = (pkg) => {
+  const handlePackageClick = pkg => {
     setSelectedPackage(pkg);
     fetchPackageInfo(pkg.name, true);
+    // Commands will be fetched automatically by fetchPackageInfo
   };
 
-  const handleDependencyClick = (packageName) => {
+  const handleDependencyClick = packageName => {
     // Find the package in the current packages list
     const pkg = packages.find(p => p.name === packageName);
     if (pkg) {
       setSelectedPackage(pkg);
       fetchPackageInfo(packageName, true);
+      // Commands will be fetched automatically by fetchPackageInfo
     } else {
       // If the package is not in the current list (e.g., it's a dependency but not installed),
       // create a temporary package object and show its info
       const tempPkg = { name: packageName, isInstalled: false };
       setSelectedPackage(tempPkg);
       fetchPackageInfo(packageName, true);
+      // Commands will be fetched automatically by fetchPackageInfo
     }
   };
 
@@ -293,6 +378,8 @@ function App() {
     setSelectedPackage(null);
     setPackageInfo(null);
     setPackageInfoError(null);
+    setPackageCommands(null);
+    setPackageCommandsError(null);
   };
 
   const handleOpenSearchModal = () => {
@@ -319,7 +406,7 @@ function App() {
     setDoctorModalOpen(false);
   };
 
-  const handleUninstallClick = (pkg) => {
+  const handleUninstallClick = pkg => {
     setSelectedPackageForUninstall(pkg);
     setUninstallModalOpen(true);
   };
@@ -335,22 +422,24 @@ function App() {
     // Clear cache since dependencies might have changed
     // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
+    setPackageCommandsCache(new Map());
     setDependencyMap(new Map());
     setDependentsMap(new Map());
     showSnackbar(`Successfully uninstalled ${packageName}`, 'success');
   };
 
-  const handleInstallSuccess = (packageName) => {
+  const handleInstallSuccess = packageName => {
     fetchPackages();
     // Clear cache since dependencies might have changed
     // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
     setPackageInfoCache(new Map());
+    setPackageCommandsCache(new Map());
     setDependencyMap(new Map());
     setDependentsMap(new Map());
     showSnackbar(`Successfully installed ${packageName}`, 'success');
   };
 
-  const handleFilterChange = (value) => {
+  const handleFilterChange = value => {
     setFilterValue(value);
   };
 
@@ -358,11 +447,12 @@ function App() {
     if (!filterValue.trim()) {
       return packages;
     }
-    
+
     const filterLower = filterValue.toLowerCase();
-    return packages.filter(pkg => 
-      pkg.name.toLowerCase().includes(filterLower) ||
-      (pkg.version && pkg.version.toLowerCase().includes(filterLower))
+    return packages.filter(
+      pkg =>
+        pkg.name.toLowerCase().includes(filterLower) ||
+        (pkg.version && pkg.version.toLowerCase().includes(filterLower))
     );
   };
 
@@ -375,11 +465,11 @@ function App() {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          bgcolor: 'background.default'
+          bgcolor: 'background.default',
         }}
       >
         <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ mt: 2 }}>
+        <Typography variant='h6' sx={{ mt: 2 }}>
           Loading packages...
         </Typography>
       </Box>
@@ -388,13 +478,13 @@ function App() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="static">
+      <AppBar position='static'>
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
             Brewanator
           </Typography>
-          <Button 
-            color="inherit" 
+          <Button
+            color='inherit'
             startIcon={<RefreshIcon />}
             onClick={handleRefresh}
             disabled={loading}
@@ -408,118 +498,127 @@ function App() {
         {/* Main Content */}
         <Box sx={{ flex: 1, px: 2 }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert severity='error' sx={{ mb: 3 }}>
               Error: {error}
             </Alert>
           )}
 
-          <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box
+            sx={{
+              mb: 4,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <Box>
-              <Typography variant="h4" component="h1" gutterBottom>
+              <Typography variant='h4' component='h1' gutterBottom>
                 Installed Packages
               </Typography>
-              <Box display="flex" gap={1} alignItems="center">
-                <Chip 
-                  label={`${packages.length} packages`} 
-                  color="primary" 
-                  variant="outlined"
+              <Box display='flex' gap={1} alignItems='center'>
+                <Chip
+                  label={`${packages.length} packages`}
+                  color='primary'
+                  variant='outlined'
                 />
                 {lastUpdateTime && (
-                  <Chip 
+                  <Chip
                     label={`Last updated: ${lastUpdateTime}`}
-                    color="secondary"
-                    variant="outlined"
-                  size="small"
-                />
-              )}
+                    color='secondary'
+                    variant='outlined'
+                    size='small'
+                  />
+                )}
+              </Box>
+            </Box>
+            <Box display='flex' gap={1}>
+              <Button
+                variant='outlined'
+                color='primary'
+                startIcon={<UpdateIcon />}
+                onClick={handleOpenUpdateUpgradeModal}
+                sx={{ minWidth: 140 }}
+              >
+                Update & Upgrade
+              </Button>
+              <Button
+                variant='outlined'
+                color='secondary'
+                startIcon={<DoctorIcon />}
+                onClick={handleOpenDoctorModal}
+                sx={{ minWidth: 120 }}
+              >
+                Doctor
+              </Button>
+              <Button
+                variant='contained'
+                startIcon={<SearchIcon />}
+                onClick={handleOpenSearchModal}
+                sx={{ minWidth: 120 }}
+              >
+                Search
+              </Button>
             </Box>
           </Box>
-          <Box display="flex" gap={1}>
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<UpdateIcon />}
-              onClick={handleOpenUpdateUpgradeModal}
-              sx={{ minWidth: 140 }}
-            >
-              Update & Upgrade
-            </Button>
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={<DoctorIcon />}
-              onClick={handleOpenDoctorModal}
-              sx={{ minWidth: 120 }}
-            >
-              Doctor
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<SearchIcon />}
-              onClick={handleOpenSearchModal}
-              sx={{ minWidth: 120 }}
-            >
-              Search
-            </Button>
-          </Box>
-        </Box>
 
-        <PackageFilter
-          onFilterChange={handleFilterChange}
-          filteredCount={getFilteredPackages().length}
-          totalCount={packages.length}
-        />
+          <PackageFilter
+            onFilterChange={handleFilterChange}
+            filteredCount={getFilteredPackages().length}
+            totalCount={packages.length}
+          />
 
-                <PackageList 
-          packages={getFilteredPackages()} 
-          onPackageClick={handlePackageClick}
-          onUninstallClick={handleUninstallClick}
-          onDependencyClick={handleDependencyClick}
-          dependencyMap={dependencyMap}
-          dependentsMap={dependentsMap}
-          packageInfoCache={packageInfoCache}
-        />
+          <PackageList
+            packages={getFilteredPackages()}
+            onPackageClick={handlePackageClick}
+            onUninstallClick={handleUninstallClick}
+            onDependencyClick={handleDependencyClick}
+            dependencyMap={dependencyMap}
+            dependentsMap={dependentsMap}
+            packageInfoCache={packageInfoCache}
+          />
 
-        <PackageInfoDialog
-          open={selectedPackage !== null}
-          onClose={handleCloseDialog}
-          selectedPackage={selectedPackage}
-          packageInfo={packageInfo}
-          packageInfoLoading={packageInfoLoading}
-          packageInfoError={packageInfoError}
-          onDependencyClick={handleDependencyClick}
-        />
+          <PackageInfoDialog
+            open={selectedPackage !== null}
+            onClose={handleCloseDialog}
+            selectedPackage={selectedPackage}
+            packageInfo={packageInfo}
+            packageInfoLoading={packageInfoLoading}
+            packageInfoError={packageInfoError}
+            packageCommands={packageCommands}
+            packageCommandsLoading={packageCommandsLoading}
+            packageCommandsError={packageCommandsError}
+            onDependencyClick={handleDependencyClick}
+          />
 
-                <SearchModal 
-          open={searchModalOpen} 
-          onClose={handleCloseSearchModal} 
-          onPackageClick={handlePackageClick}
-          installedPackages={packages}
-          onRefreshInstalledPackages={fetchPackages}
-          onInstallSuccess={handleInstallSuccess}
-          onDependencyClick={handleDependencyClick}
-          dependencyMap={dependencyMap}
-          dependentsMap={dependentsMap}
-        />
+          <SearchModal
+            open={searchModalOpen}
+            onClose={handleCloseSearchModal}
+            onPackageClick={handlePackageClick}
+            installedPackages={packages}
+            onRefreshInstalledPackages={fetchPackages}
+            onInstallSuccess={handleInstallSuccess}
+            onDependencyClick={handleDependencyClick}
+            dependencyMap={dependencyMap}
+            dependentsMap={dependentsMap}
+          />
 
-                <UpdateUpgradeModal 
-          open={updateUpgradeModalOpen} 
-          onClose={handleCloseUpdateUpgradeModal}
-          onUpdateSuccess={fetchLastUpdateTime}
-        />
-        
-        <UninstallModal
-          open={uninstallModalOpen}
-          onClose={handleCloseUninstallModal}
-          packageName={selectedPackageForUninstall?.name}
-          onUninstallSuccess={handleUninstallSuccess}
-        />
+          <UpdateUpgradeModal
+            open={updateUpgradeModalOpen}
+            onClose={handleCloseUpdateUpgradeModal}
+            onUpdateSuccess={fetchLastUpdateTime}
+          />
 
-        <DoctorModal
-          open={doctorModalOpen}
-          onClose={handleCloseDoctorModal}
-        />
+          <UninstallModal
+            open={uninstallModalOpen}
+            onClose={handleCloseUninstallModal}
+            packageName={selectedPackageForUninstall?.name}
+            onUninstallSuccess={handleUninstallSuccess}
+          />
 
+          <DoctorModal
+            open={doctorModalOpen}
+            onClose={handleCloseDoctorModal}
+          />
         </Box>
       </Box>
 
@@ -529,8 +628,8 @@ function App() {
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={() => setSnackbarOpen(false)} 
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
           severity={snackbarSeverity}
           sx={{ width: '100%' }}
         >

@@ -152,6 +152,125 @@ class BrewService {
     }
 
     /**
+     * Gets the commands that a package provides once installed
+     * This checks the package's bin directory and uses brew list --formula for additional info
+     */
+    fun getPackageCommands(packageName: String): model.BrewPackageCommands {
+        return try {
+            // First check if the package is installed
+            val listResult = executeBrewCommand(listOf("list", "--formula"))
+            if (!listResult.isSuccess) {
+                return model.BrewPackageCommands(
+                    packageName = packageName,
+                    commands = emptyList(),
+                    isSuccess = false,
+                    errorMessage = "Failed to check if package is installed: ${listResult.errorMessage}",
+                )
+            }
+
+            val installedPackages = listResult.output.lines()
+                .filter { it.isNotBlank() }
+                .map { it.trim() }
+
+            if (!installedPackages.contains(packageName)) {
+                return model.BrewPackageCommands(
+                    packageName = packageName,
+                    commands = emptyList(),
+                    isSuccess = false,
+                    errorMessage = "Package '$packageName' is not installed",
+                )
+            }
+
+            // Get the Homebrew prefix to find the package's bin directory
+            val prefixResult = executeBrewCommand(listOf("--prefix"))
+            if (!prefixResult.isSuccess) {
+                return model.BrewPackageCommands(
+                    packageName = packageName,
+                    commands = emptyList(),
+                    isSuccess = false,
+                    errorMessage = "Failed to get Homebrew prefix: ${prefixResult.errorMessage}",
+                )
+            }
+
+            val homebrewPrefix = prefixResult.output.trim()
+            val packageBinDir = java.io.File("$homebrewPrefix/bin")
+            
+            if (!packageBinDir.exists()) {
+                return model.BrewPackageCommands(
+                    packageName = packageName,
+                    commands = emptyList(),
+                    isSuccess = false,
+                    errorMessage = "Package bin directory not found",
+                )
+            }
+
+            // Get package info to find the actual package path
+            val infoResult = executeBrewCommand(listOf("info", packageName))
+            if (!infoResult.isSuccess) {
+                return model.BrewPackageCommands(
+                    packageName = packageName,
+                    commands = emptyList(),
+                    isSuccess = false,
+                    errorMessage = "Failed to get package info: ${infoResult.errorMessage}",
+                )
+            }
+
+            // Extract the package path from brew info output
+            val packagePath = extractPackagePathFromInfo(infoResult.output, packageName)
+            if (packagePath == null) {
+                return model.BrewPackageCommands(
+                    packageName = packageName,
+                    commands = emptyList(),
+                    isSuccess = false,
+                    errorMessage = "Could not determine package installation path",
+                )
+            }
+
+            // Check the package's bin directory for executable files
+            val packageBinPath = java.io.File("$packagePath/bin")
+            val commands = mutableSetOf<String>()
+
+            if (packageBinPath.exists() && packageBinPath.isDirectory) {
+                packageBinPath.listFiles()
+                    ?.filter { it.isFile && it.canExecute() }
+                    ?.map { it.name }
+                    ?.let { commands.addAll(it) }
+            }
+
+            // Also check for commands in the main bin directory that might be symlinked to this package
+            val allBinFiles = packageBinDir.listFiles()
+                ?.filter { it.isFile && it.canExecute() }
+                ?.filter { file ->
+                    try {
+                        val canonicalPath = file.canonicalPath
+                        canonicalPath.contains(packagePath)
+                    } catch (e: Exception) {
+                        false
+                    }
+                }
+                ?.map { it.name }
+                ?: emptyList()
+
+            commands.addAll(allBinFiles)
+            val sortedCommands = commands.sorted()
+
+            model.BrewPackageCommands(
+                packageName = packageName,
+                commands = sortedCommands,
+                isSuccess = true,
+                exitCode = 0,
+            )
+        } catch (e: Exception) {
+            model.BrewPackageCommands(
+                packageName = packageName,
+                commands = emptyList(),
+                isSuccess = false,
+                errorMessage = "Failed to get package commands: ${e.message}",
+            )
+        }
+    }
+
+    /**
      * Extracts description from brew info output
      * The description is the line that comes after the package name and version line
      * Example: "==> node: stable 24.6.0 (bottled), HEAD"
@@ -192,6 +311,37 @@ class BrewService {
         }
 
         return descriptionLine
+    }
+
+    /**
+     * Extracts the package installation path from brew info output
+     */
+    private fun extractPackagePathFromInfo(infoOutput: String, packageName: String): String? {
+        val lines = infoOutput.lines()
+        for (line in lines) {
+            if (line.trim().startsWith("==> $packageName:")) {
+                // Look for the "Installed" line, then get the next line with the path
+                val lineIndex = lines.indexOf(line)
+                for (i in lineIndex + 1 until lines.size) {
+                    val nextLine = lines[i].trim()
+                    if (nextLine == "Installed") {
+                        // The path is on the next line
+                        if (i + 1 < lines.size) {
+                            val pathLine = lines[i + 1].trim()
+                            if (pathLine.startsWith("/") && pathLine.contains("/Cellar/")) {
+                                // Extract the path from "/path/to/package (files, size) *"
+                                val pathMatch = Regex("/[^\\s]+/Cellar/[^\\s]+").find(pathLine)
+                                return pathMatch?.value
+                            }
+                        }
+                    }
+                    if (nextLine.startsWith("==>")) {
+                        break
+                    }
+                }
+            }
+        }
+        return null
     }
 
     /**

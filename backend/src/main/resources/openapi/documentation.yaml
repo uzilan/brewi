@@ -236,6 +236,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrewCommandResult'
 
+  /api/packages/{packageName}/commands:
+    get:
+      operationId: getPackageCommands
+      summary: Get package commands
+      description: Returns the commands that a package provides once installed
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          description: Name of the package to get commands for
+          schema:
+            type: string
+            example: "node"
+      responses:
+        '200':
+          description: Package commands retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewPackageCommands'
+        '400':
+          description: Bad request - package name is required
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Package name is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrewPackageCommands'
+
 components:
   schemas:
     BrewListResult:
@@ -334,3 +368,29 @@ components:
         - isSuccess
         - dependencies
         - dependents
+
+    BrewPackageCommands:
+      type: object
+      properties:
+        packageName:
+          type: string
+          description: Name of the package
+        commands:
+          type: array
+          items:
+            type: string
+          description: List of commands provided by the package
+        isSuccess:
+          type: boolean
+          description: Whether the command executed successfully
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if the command failed
+        exitCode:
+          type: integer
+          description: Exit code of the command
+      required:
+        - packageName
+        - commands
+        - isSuccess
