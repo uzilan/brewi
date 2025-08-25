@@ -80,7 +80,7 @@ module.exports = {
 
     // General JavaScript rules
     'no-unused-vars': 'warn',
-    'no-console': 'warn',
+    'no-console': ['warn', { allow: ['error', 'warn', 'info'] }],
     'no-debugger': 'error',
     'no-alert': 'warn',
     'no-var': 'error',

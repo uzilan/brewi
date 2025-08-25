@@ -27,7 +27,7 @@ class BrewServiceTest {
     @Test
     fun `getPackageInfoWithDependencies should return comprehensive package info`() {
         val brewService = BrewService()
-        
+
         // Test with a common package that should be available
         val packageName = "node"
         val result = brewService.getPackageInfoWithDependencies(packageName, emptyList())
@@ -36,30 +36,30 @@ class BrewServiceTest {
         assertThat(result).isNotNull()
         assertThat(result.name).isEqualTo(packageName)
         assertThat(result.isSuccess).isTrue()
-        
+
         // Check that we have package info output
         assertThat(result.output).isNotNull()
         assertThat(result.output).isNotEmpty()
-        
+
         // Check dependencies (node should have some dependencies)
         assertThat(result.dependencies).isNotNull()
         assertThat(result.dependencies).isNotEmpty()
-        
+
         // Check dependents (might be empty if no other packages depend on node)
         assertThat(result.dependents).isNotNull()
-        
+
         // Check description extraction
         if (result.description != null) {
             assertThat(result.description).isNotEmpty()
             assertThat(result.description.length).isGreaterThan(10)
         }
-        
+
         // Verify that dependencies are valid package names
         result.dependencies.forEach { dep ->
             assertThat(dep).isNotEmpty()
             assertThat(dep).matches("[a-zA-Z0-9@._-]+")
         }
-        
+
         // Verify that dependents are valid package names
         result.dependents.forEach { dep ->
             assertThat(dep).isNotEmpty()
@@ -70,7 +70,7 @@ class BrewServiceTest {
     @Test
     fun `getPackageInfoWithDependencies should handle non-existent package gracefully`() {
         val brewService = BrewService()
-        
+
         // Test with a non-existent package
         val packageName = "non-existent-package-12345"
         val result = brewService.getPackageInfoWithDependencies(packageName, emptyList())
@@ -78,18 +78,18 @@ class BrewServiceTest {
         // Should still return a result object
         assertThat(result).isNotNull()
         assertThat(result.name).isEqualTo(packageName)
-        
+
         // Should indicate failure
         assertThat(result.isSuccess).isFalse()
-        
+
         // Should have error message
         assertThat(result.errorMessage).isNotNull()
         assertThat(result.errorMessage!!).isNotEmpty()
-        
+
         // Dependencies and dependents should be empty
         assertThat(result.dependencies).isEmpty()
         assertThat(result.dependents).isEmpty()
-        
+
         // Description should be null
         assertThat(result.description).isNull()
     }
@@ -97,14 +97,14 @@ class BrewServiceTest {
     @Test
     fun `getPackageInfoWithDependencies should extract description correctly`() {
         val brewService = BrewService()
-        
+
         // Test with a package that should have a description
         val packageName = "python"
         val result = brewService.getPackageInfoWithDependencies(packageName, emptyList())
 
         assertThat(result).isNotNull()
         assertThat(result.name).isEqualTo(packageName)
-        
+
         if (result.isSuccess) {
             // If successful, check that description is extracted
             if (result.description != null) {
@@ -224,7 +224,7 @@ class BrewServiceTest {
             { assertThat(it).contains("ready to brew") },
             { assertThat(it).contains("warning") },
             { assertThat(it).contains("error") },
-            { assertThat(it).contains("issue") }
+            { assertThat(it).contains("issue") },
         )
     }
 

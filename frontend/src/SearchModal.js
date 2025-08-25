@@ -60,7 +60,6 @@ function SearchModal({
   };
 
   const handleClose = () => {
-    console.log('SearchModal handleClose called, clearing query');
     setQuery('');
     setSearchResults(null);
     setSearchError(null);
@@ -95,7 +94,6 @@ function SearchModal({
   };
 
   const handleInstallSuccess = packageName => {
-    console.log('Install success, current query:', query);
     // Refresh the installed packages list from parent
     if (onRefreshInstalledPackages) {
       onRefreshInstalledPackages();
@@ -119,7 +117,6 @@ function SearchModal({
   }, [open]);
 
   useEffect(() => {
-    console.log('Query changed to:', query);
     // Clear search results when query is cleared
     if (!query.trim()) {
       setSearchResults(null);

@@ -3,12 +3,16 @@ package service
 import model.BrewCommandResult
 import model.BrewListResult
 import model.BrewPackage
+import model.TldrResult
+import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
 /**
  * Service that executes brew commands
  */
 class BrewService {
+    private val logger = LoggerFactory.getLogger(BrewService::class.java)
+
     /**
      * Executes brew list command and returns structured result
      */
@@ -33,20 +37,18 @@ class BrewService {
     /**
      * Executes brew search command
      */
-    fun searchPackages(query: String): BrewCommandResult {
-        return executeBrewCommand(listOf("search", query))
-    }
+    fun searchPackages(query: String): BrewCommandResult = executeBrewCommand(listOf("search", query))
 
     /**
      * Executes brew info command for a specific package
      */
     fun getPackageInfo(packageName: String): BrewCommandResult {
-        return executeBrewCommand(listOf("info", packageName), 60) // 1 minute timeout for info
+        return executeBrewCommand(listOf("info", packageName), 30) // 30 second timeout for info
     }
 
     /**
-     * Gets comprehensive package information including dependencies and dependents,
-     * cross-referencing with installed packages to improve dependents accuracy
+     * Gets comprehensive package information including dependencies and dependents
+     * Optimized version that doesn't cross-reference all installed packages
      */
     fun getPackageInfoWithDependencies(
         packageName: String,
@@ -59,7 +61,8 @@ class BrewService {
         // Parse dependencies and dependents
         val dependencies =
             if (depsResult.isSuccess) {
-                depsResult.output.lines()
+                depsResult.output
+                    .lines()
                     .filter { it.isNotBlank() }
                     .map { it.trim() }
             } else {
@@ -68,49 +71,21 @@ class BrewService {
 
         val dependents =
             if (usesResult.isSuccess) {
-                usesResult.output.lines()
+                usesResult.output
+                    .lines()
                     .filter { it.isNotBlank() }
                     .map { it.trim() }
             } else {
                 emptyList()
             }
 
-        // Cross-reference with installed packages to find additional dependents
-        val enhancedDependents = mutableSetOf<String>()
-        enhancedDependents.addAll(dependents)
-
-        // For each installed package, check if it depends on this package
-        for (installedPackage in installedPackages) {
-            if (installedPackage != packageName) {
-                try {
-                    val installedDepsResult = getPackageDependencies(installedPackage)
-                    if (installedDepsResult.isSuccess) {
-                        val installedDeps =
-                            installedDepsResult.output.lines()
-                                .filter { it.isNotBlank() }
-                                .map { it.trim() }
-
-                        // If this installed package depends on the current package, add it to dependents
-                        if (installedDeps.contains(packageName)) {
-                            enhancedDependents.add(installedPackage)
-                        }
-                    }
-                } catch (e: Exception) {
-                    // Skip this package if there's an error checking its dependencies
-                    continue
-                }
-            }
-        }
-
         // Extract description from brew info output
-        println("DEBUG: About to extract description for $packageName")
-        println("DEBUG: infoResult.isSuccess: ${infoResult.isSuccess}")
-        val description = if (infoResult.isSuccess) {
-            extractDescriptionFromInfoOutput(packageName, infoResult.output)
-        } else {
-            null
-        }
-        println("DEBUG: Final description result: $description")
+        val description =
+            if (infoResult.isSuccess) {
+                extractDescriptionFromInfoOutput(packageName, infoResult.output)
+            } else {
+                null
+            }
 
         return model.BrewPackageInfo(
             name = packageName,
@@ -118,7 +93,7 @@ class BrewService {
             isSuccess = infoResult.isSuccess,
             errorMessage = infoResult.errorMessage,
             dependencies = dependencies,
-            dependents = enhancedDependents.toList(),
+            dependents = dependents,
             description = description,
         )
     }
@@ -140,16 +115,12 @@ class BrewService {
     /**
      * Gets dependencies for a specific package
      */
-    fun getPackageDependencies(packageName: String): BrewCommandResult {
-        return executeBrewCommand(listOf("deps", packageName))
-    }
+    fun getPackageDependencies(packageName: String): BrewCommandResult = executeBrewCommand(listOf("deps", packageName))
 
     /**
      * Gets packages that depend on a specific package
      */
-    fun getPackageDependents(packageName: String): BrewCommandResult {
-        return executeBrewCommand(listOf("uses", packageName))
-    }
+    fun getPackageDependents(packageName: String): BrewCommandResult = executeBrewCommand(listOf("uses", packageName))
 
     /**
      * Gets the commands that a package provides once installed
@@ -168,9 +139,11 @@ class BrewService {
                 )
             }
 
-            val installedPackages = listResult.output.lines()
-                .filter { it.isNotBlank() }
-                .map { it.trim() }
+            val installedPackages =
+                listResult.output
+                    .lines()
+                    .filter { it.isNotBlank() }
+                    .map { it.trim() }
 
             if (!installedPackages.contains(packageName)) {
                 return model.BrewPackageCommands(
@@ -194,7 +167,7 @@ class BrewService {
 
             val homebrewPrefix = prefixResult.output.trim()
             val packageBinDir = java.io.File("$homebrewPrefix/bin")
-            
+
             if (!packageBinDir.exists()) {
                 return model.BrewPackageCommands(
                     packageName = packageName,
@@ -231,25 +204,27 @@ class BrewService {
             val commands = mutableSetOf<String>()
 
             if (packageBinPath.exists() && packageBinPath.isDirectory) {
-                packageBinPath.listFiles()
+                packageBinPath
+                    .listFiles()
                     ?.filter { it.isFile && it.canExecute() }
                     ?.map { it.name }
                     ?.let { commands.addAll(it) }
             }
 
             // Also check for commands in the main bin directory that might be symlinked to this package
-            val allBinFiles = packageBinDir.listFiles()
-                ?.filter { it.isFile && it.canExecute() }
-                ?.filter { file ->
-                    try {
-                        val canonicalPath = file.canonicalPath
-                        canonicalPath.contains(packagePath)
-                    } catch (e: Exception) {
-                        false
-                    }
-                }
-                ?.map { it.name }
-                ?: emptyList()
+            val allBinFiles =
+                packageBinDir
+                    .listFiles()
+                    ?.filter { it.isFile && it.canExecute() }
+                    ?.filter { file ->
+                        try {
+                            val canonicalPath = file.canonicalPath
+                            canonicalPath.contains(packagePath)
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }?.map { it.name }
+                    ?: emptyList()
 
             commands.addAll(allBinFiles)
             val sortedCommands = commands.sorted()
@@ -290,9 +265,10 @@ class BrewService {
         }
 
         // Find the line that starts with "==> $packageName:"
-        val packageInfoLineIndex = lines.indexOfFirst { line ->
-            line.trim().startsWith("==> $packageName:")
-        }
+        val packageInfoLineIndex =
+            lines.indexOfFirst { line ->
+                line.trim().startsWith("==> $packageName:")
+            }
 
         if (packageInfoLineIndex == -1 || packageInfoLineIndex + 1 >= lines.size) {
             return null
@@ -300,13 +276,14 @@ class BrewService {
 
         // The description is the next line after the package info line
         val descriptionLine = lines[packageInfoLineIndex + 1].trim()
-        
+
         // Skip if the next line is empty or starts with common non-description patterns
-        if (descriptionLine.isBlank() || 
+        if (descriptionLine.isBlank() ||
             descriptionLine.startsWith("http") ||
             descriptionLine.startsWith("From:") ||
             descriptionLine.startsWith("License:") ||
-            descriptionLine.startsWith("==>")) {
+            descriptionLine.startsWith("==>")
+        ) {
             return null
         }
 
@@ -316,7 +293,10 @@ class BrewService {
     /**
      * Extracts the package installation path from brew info output
      */
-    private fun extractPackagePathFromInfo(infoOutput: String, packageName: String): String? {
+    private fun extractPackagePathFromInfo(
+        infoOutput: String,
+        packageName: String,
+    ): String? {
         val lines = infoOutput.lines()
         for (line in lines) {
             if (line.trim().startsWith("==> $packageName:")) {
@@ -347,9 +327,7 @@ class BrewService {
     /**
      * Executes brew outdated command to check for updates
      */
-    fun checkOutdated(): BrewCommandResult {
-        return executeBrewCommand(listOf("outdated"))
-    }
+    fun checkOutdated(): BrewCommandResult = executeBrewCommand(listOf("outdated"))
 
     /**
      * Gets the last update time by checking the Homebrew cache directory
@@ -374,7 +352,8 @@ class BrewService {
 
             // Get the most recent modification time of any file in the cache
             val lastModified =
-                cacheDir.walkTopDown()
+                cacheDir
+                    .walkTopDown()
                     .filter { it.isFile }
                     .map { it.lastModified() }
                     .maxOrNull()
@@ -407,16 +386,12 @@ class BrewService {
     /**
      * Executes brew update command to update Homebrew itself
      */
-    fun updateBrew(): BrewCommandResult {
-        return executeBrewCommand(listOf("update"))
-    }
+    fun updateBrew(): BrewCommandResult = executeBrewCommand(listOf("update"))
 
     /**
      * Executes brew upgrade command to upgrade all packages
      */
-    fun upgradePackages(): BrewCommandResult {
-        return executeBrewCommand(listOf("upgrade"))
-    }
+    fun upgradePackages(): BrewCommandResult = executeBrewCommand(listOf("upgrade"))
 
     /**
      * Executes brew update followed by brew upgrade
@@ -459,9 +434,7 @@ class BrewService {
     fun executeCustomCommand(
         args: List<String>,
         timeoutSeconds: Long = 30,
-    ): BrewCommandResult {
-        return executeBrewCommand(args, timeoutSeconds)
-    }
+    ): BrewCommandResult = executeBrewCommand(args, timeoutSeconds)
 
     /**
      * Executes any brew command with the given arguments
@@ -521,8 +494,9 @@ class BrewService {
         }
     }
 
-    private fun parseBrewOutput(output: String): List<BrewPackage> {
-        return output.lines()
+    private fun parseBrewOutput(output: String): List<BrewPackage> =
+        output
+            .lines()
             .filter { it.isNotBlank() }
             .map { line ->
                 // Parse package name and version from "brew list --versions" output
@@ -534,7 +508,82 @@ class BrewService {
                 } else {
                     BrewPackage(name = trimmed)
                 }
+            }.sortedBy { it.name }
+
+    fun getTldrInfo(command: String): TldrResult {
+        logger.info("Getting tldr info for command: $command")
+
+        if (command.isBlank()) {
+            return TldrResult(
+                command = command,
+                output = "",
+                isSuccess = false,
+                errorMessage = "Command name cannot be empty",
+                exitCode = 1,
+            )
+        }
+
+        // Sanitize command to prevent command injection
+        val sanitizedCommand = command.trim().replace(Regex("[^a-zA-Z0-9._-]"), "")
+        if (sanitizedCommand.isEmpty()) {
+            return TldrResult(
+                command = command,
+                output = "",
+                isSuccess = false,
+                errorMessage = "Invalid command name",
+                exitCode = 1,
+            )
+        }
+
+        return try {
+            val process =
+                ProcessBuilder("tldr", sanitizedCommand)
+                    .redirectErrorStream(true)
+                    .start()
+
+            val completed = process.waitFor(10, TimeUnit.SECONDS) // 10 second timeout for tldr
+
+            if (!completed) {
+                process.destroyForcibly()
+                return TldrResult(
+                    command = sanitizedCommand,
+                    output = "",
+                    isSuccess = false,
+                    errorMessage = "tldr command timed out after 10 seconds",
+                    exitCode = 1,
+                )
             }
-            .sortedBy { it.name }
+
+            val exitCode = process.exitValue()
+            val output = process.inputStream.bufferedReader().use { it.readText() }
+
+            if (exitCode == 0) {
+                logger.info("Successfully retrieved tldr info for command: $sanitizedCommand")
+                TldrResult(
+                    command = sanitizedCommand,
+                    output = output.trim(),
+                    isSuccess = true,
+                    exitCode = exitCode,
+                )
+            } else {
+                logger.warn("tldr command failed for: $sanitizedCommand, exit code: $exitCode")
+                TldrResult(
+                    command = sanitizedCommand,
+                    output = output.trim(),
+                    isSuccess = false,
+                    errorMessage = "tldr command failed",
+                    exitCode = exitCode,
+                )
+            }
+        } catch (e: Exception) {
+            logger.error("Error running tldr for command $sanitizedCommand: ${e.message}", e)
+            TldrResult(
+                command = sanitizedCommand,
+                output = "",
+                isSuccess = false,
+                errorMessage = "Error running tldr command: ${e.message}",
+                exitCode = 1,
+            )
+        }
     }
 }

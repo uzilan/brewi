@@ -16,7 +16,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import model.BrewCommandResult
-import model.BrewPackageCommands
+import model.TldrResult
 import service.BrewService
 
 object ApplicationServer {
@@ -179,6 +179,34 @@ object ApplicationServer {
                 }
             }
 
+            get("/api/tldr/{command}") {
+                val command = call.parameters["command"]
+                if (command.isNullOrBlank()) {
+                    call.respondText("Command name is required", status = HttpStatusCode.BadRequest)
+                    return@get
+                }
+                log.info("Get tldr info endpoint hit for command: $command")
+                try {
+                    val result = brewService.getTldrInfo(command)
+                    log.info(
+                        "Get tldr info result for $command: success=${result.isSuccess}, " +
+                            "exitCode=${result.exitCode}",
+                    )
+                    call.respond(result)
+                } catch (e: Exception) {
+                    log.error("Error getting tldr info for $command: ${e.message}", e)
+                    val errorResult =
+                        TldrResult(
+                            command = command,
+                            output = "",
+                            isSuccess = false,
+                            errorMessage = "Failed to get tldr info: ${e.message}",
+                            exitCode = -1,
+                        )
+                    call.respond(errorResult)
+                }
+            }
+
             get("/openapi/documentation.yaml") {
                 try {
                     val content =
@@ -204,6 +232,7 @@ object ApplicationServer {
         log.info("List packages available at: http://localhost:8080/api/packages")
         log.info("Get package info at: http://localhost:8080/api/packages/{packageName}")
         log.info("Get package commands at: http://localhost:8080/api/packages/{packageName}/commands")
+        log.info("Get tldr info at: http://localhost:8080/api/tldr/{command}")
         log.info("Search packages at: http://localhost:8080/api/packages/search/{query}")
         log.info("Install packages at: http://localhost:8080/api/packages/{packageName}/install")
         log.info("Uninstall packages at: http://localhost:8080/api/packages/{packageName}/uninstall")

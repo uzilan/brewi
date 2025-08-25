@@ -270,6 +270,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrewPackageCommands'
 
+  /api/tldr/{command}:
+    get:
+      operationId: getTldrInfo
+      summary: Get tldr information for a command
+      description: Retrieves concise usage examples and explanations for a command using tldr
+      parameters:
+        - name: command
+          in: path
+          required: true
+          description: The command name to get tldr information for
+          schema:
+            type: string
+            example: "git"
+      responses:
+        '200':
+          description: Tldr information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TldrResult'
+        '400':
+          description: Bad request - command name is required
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Command name is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TldrResult'
+
 components:
   schemas:
     BrewListResult:
@@ -394,3 +428,28 @@ components:
         - packageName
         - commands
         - isSuccess
+
+    TldrResult:
+      type: object
+      properties:
+        command:
+          type: string
+          description: The command name
+        output:
+          type: string
+          description: The tldr output for the command
+        isSuccess:
+          type: boolean
+          description: Whether the tldr command executed successfully
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if the command failed
+        exitCode:
+          type: integer
+          description: Exit code of the tldr command
+      required:
+        - command
+        - output
+        - isSuccess
+        - exitCode
