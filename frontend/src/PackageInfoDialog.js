@@ -11,6 +11,7 @@ import {
   Paper,
   Divider,
   Chip,
+  Tooltip,
 } from '@mui/material';
 import { useRef } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -284,44 +285,53 @@ function PackageInfoDialog({
                 packageCommands.commands.length > 0 ? (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {packageCommands.commands.map((command, index) => (
-                    <Chip
+                    <Tooltip
                       key={index}
-                      label={command}
-                      size='small'
-                      variant={
-                        tldrInfo && tldrInfo.command === command
-                          ? 'filled'
-                          : 'outlined'
-                      }
-                      color={
-                        tldrInfo && tldrInfo.command === command
-                          ? 'primary'
-                          : 'success'
-                      }
-                      sx={{
-                        fontFamily: 'monospace',
-                        backgroundColor:
+                      title={`Click to see documentation for ${command}`}
+                      arrow
+                    >
+                      <Chip
+                        label={command}
+                        size='small'
+                        variant={
                           tldrInfo && tldrInfo.command === command
-                            ? 'primary.main'
-                            : 'success.light',
-                        color:
+                            ? 'filled'
+                            : 'outlined'
+                        }
+                        color={
                           tldrInfo && tldrInfo.command === command
-                            ? 'primary.contrastText'
-                            : 'success.contrastText',
-                        cursor: 'pointer',
-                        '&:hover': {
+                            ? 'primary'
+                            : 'success'
+                        }
+                        sx={{
+                          fontFamily: 'monospace',
                           backgroundColor:
                             tldrInfo && tldrInfo.command === command
-                              ? 'primary.dark'
-                              : 'success.main',
-                        },
-                      }}
-                      onClick={() => {
-                        if (onCommandClick) {
-                          onCommandClick(command);
-                        }
-                      }}
-                    />
+                              ? 'primary.main'
+                              : 'success.light',
+                          color:
+                            tldrInfo && tldrInfo.command === command
+                              ? 'primary.contrastText'
+                              : 'success.contrastText',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor:
+                              tldrInfo && tldrInfo.command === command
+                                ? 'primary.dark'
+                                : 'success.main',
+                          },
+                        }}
+                        onClick={() => {
+                          if (onCommandClick) {
+                            onCommandClick(command);
+                          }
+                          // Scroll to documentation section after a short delay to allow tldr info to load
+                          setTimeout(() => {
+                            scrollToSection(documentationRef);
+                          }, 100);
+                        }}
+                      />
+                    </Tooltip>
                   ))}
                 </Box>
               ) : packageCommands && packageCommands.isSuccess === false ? (
@@ -340,6 +350,16 @@ function PackageInfoDialog({
               <Paper ref={documentationRef} sx={{ p: 2, mb: 2 }}>
                 <Typography variant='subtitle1' gutterBottom>
                   Command Documentation (tldr)
+                  {tldrInfo && tldrInfo.command && (
+                    <Typography
+                      component='span'
+                      variant='body2'
+                      color='primary'
+                      sx={{ ml: 1, fontWeight: 'normal' }}
+                    >
+                      - {tldrInfo.command}
+                    </Typography>
+                  )}
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 {tldrLoading ? (
