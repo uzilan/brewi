@@ -5,19 +5,25 @@ import model.BrewListResult
 import model.BrewPackage
 import model.TldrResult
 import org.slf4j.LoggerFactory
-import java.util.concurrent.TimeUnit
 
 /**
  * Service that executes brew commands
  */
-class BrewService {
+class BrewService(
+    private val commandExecutor: CommandExecutor = RealCommandExecutor(),
+) {
     private val logger = LoggerFactory.getLogger(BrewService::class.java)
+    private val cacheService = CacheService()
+
+    companion object {
+        private const val PACKAGE_INFO_CACHE_TTL = 300L // 5 minutes
+    }
 
     /**
      * Executes brew list command and returns structured result
      */
     fun listPackages(): BrewListResult {
-        val result = executeBrewCommand(listOf("list", "--versions"))
+        val result = commandExecutor.executeBrewCommand(listOf("list", "--versions"))
 
         return if (result.isSuccess) {
             val packages = parseBrewOutput(result.output)
@@ -37,13 +43,32 @@ class BrewService {
     /**
      * Executes brew search command
      */
-    fun searchPackages(query: String): BrewCommandResult = executeBrewCommand(listOf("search", query))
+    fun searchPackages(query: String): BrewCommandResult = commandExecutor.executeBrewCommand(listOf("search", query))
 
     /**
-     * Executes brew info command for a specific package
+     * Executes brew info command for a specific package with caching
      */
     fun getPackageInfo(packageName: String): BrewCommandResult {
-        return executeBrewCommand(listOf("info", packageName), 30) // 30 second timeout for info
+        val cacheKey = "package_info:$packageName"
+
+        // Try to get from cache first
+        val cachedResult = cacheService.get<BrewCommandResult>(cacheKey)
+        if (cachedResult != null) {
+            logger.info("Cache hit for package info: $packageName")
+            return cachedResult
+        }
+
+        // Cache miss, execute the command
+        logger.info("Cache miss for package info: $packageName, executing brew command")
+        val result = commandExecutor.executeBrewCommand(listOf("info", packageName), 30) // 30 second timeout for info
+
+        // Cache the result if successful
+        if (result.isSuccess) {
+            cacheService.set(cacheKey, result, PACKAGE_INFO_CACHE_TTL)
+            logger.debug("Cached package info for: $packageName")
+        }
+
+        return result
     }
 
     /**
@@ -102,25 +127,53 @@ class BrewService {
      * Executes brew install command for a specific package
      */
     fun installPackage(packageName: String): BrewCommandResult {
-        return executeBrewCommand(listOf("install", packageName), 300) // 5 minute timeout for installs
+        val result =
+            commandExecutor
+                .executeBrewCommand(
+                    listOf("install", packageName),
+                    300,
+                ) // 5 minute timeout for installs
+
+        // Invalidate cache on successful install
+        if (result.isSuccess) {
+            invalidatePackageCache(packageName)
+            logger.info("Invalidated cache for installed package: $packageName")
+        }
+
+        return result
     }
 
     /**
      * Executes brew uninstall command for a specific package
      */
     fun uninstallPackage(packageName: String): BrewCommandResult {
-        return executeBrewCommand(listOf("uninstall", packageName), 300) // 5 minute timeout for uninstalls
+        val result =
+            commandExecutor
+                .executeBrewCommand(
+                    listOf("uninstall", packageName),
+                    300,
+                ) // 5 minute timeout for uninstalls
+
+        // Invalidate cache on successful uninstall
+        if (result.isSuccess) {
+            invalidatePackageCache(packageName)
+            logger.info("Invalidated cache for uninstalled package: $packageName")
+        }
+
+        return result
     }
 
     /**
      * Gets dependencies for a specific package
      */
-    fun getPackageDependencies(packageName: String): BrewCommandResult = executeBrewCommand(listOf("deps", packageName))
+    fun getPackageDependencies(packageName: String): BrewCommandResult =
+        commandExecutor.executeBrewCommand(listOf("deps", packageName))
 
     /**
      * Gets packages that depend on a specific package
      */
-    fun getPackageDependents(packageName: String): BrewCommandResult = executeBrewCommand(listOf("uses", packageName))
+    fun getPackageDependents(packageName: String): BrewCommandResult =
+        commandExecutor.executeBrewCommand(listOf("uses", packageName))
 
     /**
      * Gets the commands that a package provides once installed
@@ -129,7 +182,7 @@ class BrewService {
     fun getPackageCommands(packageName: String): model.BrewPackageCommands {
         return try {
             // First check if the package is installed
-            val listResult = executeBrewCommand(listOf("list", "--formula"))
+            val listResult = commandExecutor.executeBrewCommand(listOf("list", "--formula"))
             if (!listResult.isSuccess) {
                 return model.BrewPackageCommands(
                     packageName = packageName,
@@ -155,7 +208,7 @@ class BrewService {
             }
 
             // Get the Homebrew prefix to find the package's bin directory
-            val prefixResult = executeBrewCommand(listOf("--prefix"))
+            val prefixResult = commandExecutor.executeBrewCommand(listOf("--prefix"))
             if (!prefixResult.isSuccess) {
                 return model.BrewPackageCommands(
                     packageName = packageName,
@@ -178,7 +231,7 @@ class BrewService {
             }
 
             // Get package info to find the actual package path
-            val infoResult = executeBrewCommand(listOf("info", packageName))
+            val infoResult = commandExecutor.executeBrewCommand(listOf("info", packageName))
             if (!infoResult.isSuccess) {
                 return model.BrewPackageCommands(
                     packageName = packageName,
@@ -327,7 +380,7 @@ class BrewService {
     /**
      * Executes brew outdated command to check for updates
      */
-    fun checkOutdated(): BrewCommandResult = executeBrewCommand(listOf("outdated"))
+    fun checkOutdated(): BrewCommandResult = commandExecutor.executeBrewCommand(listOf("outdated"))
 
     /**
      * Gets the last update time by checking the Homebrew cache directory
@@ -386,12 +439,32 @@ class BrewService {
     /**
      * Executes brew update command to update Homebrew itself
      */
-    fun updateBrew(): BrewCommandResult = executeBrewCommand(listOf("update"))
+    fun updateBrew(): BrewCommandResult {
+        val result = commandExecutor.executeBrewCommand(listOf("update"))
+
+        // Clear cache after update to ensure fresh data
+        if (result.isSuccess) {
+            cacheService.clear()
+            logger.info("Cache cleared after successful brew update")
+        }
+
+        return result
+    }
 
     /**
      * Executes brew upgrade command to upgrade all packages
      */
-    fun upgradePackages(): BrewCommandResult = executeBrewCommand(listOf("upgrade"))
+    fun upgradePackages(): BrewCommandResult {
+        val result = commandExecutor.executeBrewCommand(listOf("upgrade"))
+
+        // Clear cache after upgrade to ensure fresh data
+        if (result.isSuccess) {
+            cacheService.clear()
+            logger.info("Cache cleared after successful brew upgrade")
+        }
+
+        return result
+    }
 
     /**
      * Executes brew update followed by brew upgrade
@@ -422,7 +495,7 @@ class BrewService {
      * @return BrewCommandResult containing the diagnostic output
      */
     fun runDoctor(): BrewCommandResult {
-        return executeBrewCommand(listOf("doctor"), 300) // 5 minute timeout for doctor
+        return commandExecutor.executeBrewCommand(listOf("doctor"), 300) // 5 minute timeout for doctor
     }
 
     /**
@@ -434,65 +507,7 @@ class BrewService {
     fun executeCustomCommand(
         args: List<String>,
         timeoutSeconds: Long = 30,
-    ): BrewCommandResult = executeBrewCommand(args, timeoutSeconds)
-
-    /**
-     * Executes any brew command with the given arguments
-     * @param args The arguments to pass to brew (e.g., ["list"], ["search", "python"])
-     * @param timeoutSeconds Timeout in seconds (default: 30)
-     * @return BrewCommandResult containing the command output and status
-     */
-    private fun executeBrewCommand(
-        args: List<String>,
-        timeoutSeconds: Long = 30,
-    ): BrewCommandResult {
-        return try {
-            val command = listOf("brew") + args
-            println("Executing command: ${command.joinToString(" ")}")
-            val process =
-                ProcessBuilder(command)
-                    .redirectErrorStream(true)
-                    .start()
-
-            val completed = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
-
-            if (!completed) {
-                process.destroyForcibly()
-                return BrewCommandResult(
-                    isSuccess = false,
-                    output = "",
-                    errorMessage = "Command timed out after $timeoutSeconds seconds",
-                )
-            }
-
-            val exitCode = process.exitValue()
-            val output = process.inputStream.bufferedReader().readText()
-
-            if (exitCode == 0) {
-                BrewCommandResult(
-                    isSuccess = true,
-                    output = output,
-                    exitCode = exitCode,
-                )
-            } else {
-                BrewCommandResult(
-                    isSuccess = false,
-                    output = output,
-                    errorMessage = "brew ${args.joinToString(" ")} failed with exit code $exitCode: $output",
-                    exitCode = exitCode,
-                )
-            }
-        } catch (e: Exception) {
-            if (e is InterruptedException) {
-                Thread.currentThread().interrupt()
-            }
-            BrewCommandResult(
-                isSuccess = false,
-                output = "",
-                errorMessage = "Failed to execute brew command: ${e.message}",
-            )
-        }
-    }
+    ): BrewCommandResult = commandExecutor.executeBrewCommand(args, timeoutSeconds)
 
     private fun parseBrewOutput(output: String): List<BrewPackage> =
         output
@@ -535,55 +550,36 @@ class BrewService {
             )
         }
 
-        return try {
-            val process =
-                ProcessBuilder("tldr", sanitizedCommand)
-                    .redirectErrorStream(true)
-                    .start()
+        val result = commandExecutor.executeTldrCommand(sanitizedCommand, 10)
 
-            val completed = process.waitFor(10, TimeUnit.SECONDS) // 10 second timeout for tldr
+        return TldrResult(
+            command = sanitizedCommand,
+            output = result.output,
+            isSuccess = result.isSuccess,
+            errorMessage = result.errorMessage,
+            exitCode = result.exitCode,
+        )
+    }
 
-            if (!completed) {
-                process.destroyForcibly()
-                return TldrResult(
-                    command = sanitizedCommand,
-                    output = "",
-                    isSuccess = false,
-                    errorMessage = "tldr command timed out after 10 seconds",
-                    exitCode = 1,
-                )
-            }
+    /**
+     * Invalidate cache entries for a specific package
+     */
+    private fun invalidatePackageCache(packageName: String) {
+        val cacheKey = "package_info:$packageName"
+        cacheService.remove(cacheKey)
+        logger.debug("Invalidated cache for package: $packageName")
+    }
 
-            val exitCode = process.exitValue()
-            val output = process.inputStream.bufferedReader().use { it.readText() }
+    /**
+     * Get cache statistics for debugging
+     */
+    fun getCacheStats(): CacheStats = cacheService.getStats()
 
-            if (exitCode == 0) {
-                logger.info("Successfully retrieved tldr info for command: $sanitizedCommand")
-                TldrResult(
-                    command = sanitizedCommand,
-                    output = output.trim(),
-                    isSuccess = true,
-                    exitCode = exitCode,
-                )
-            } else {
-                logger.warn("tldr command failed for: $sanitizedCommand, exit code: $exitCode")
-                TldrResult(
-                    command = sanitizedCommand,
-                    output = output.trim(),
-                    isSuccess = false,
-                    errorMessage = "tldr command failed",
-                    exitCode = exitCode,
-                )
-            }
-        } catch (e: Exception) {
-            logger.error("Error running tldr for command $sanitizedCommand: ${e.message}", e)
-            TldrResult(
-                command = sanitizedCommand,
-                output = "",
-                isSuccess = false,
-                errorMessage = "Error running tldr command: ${e.message}",
-                exitCode = 1,
-            )
-        }
+    /**
+     * Clear all cache entries
+     */
+    fun clearCache() {
+        cacheService.clear()
+        logger.info("Cleared all cache entries")
     }
 }

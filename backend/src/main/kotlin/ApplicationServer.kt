@@ -15,9 +15,13 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import model.BrewCommandResult
 import model.TldrResult
 import service.BrewService
+import service.CachePrePopulator
 
 object ApplicationServer {
     @JvmStatic
@@ -29,6 +33,19 @@ object ApplicationServer {
 
     fun Application.module() {
         val brewService = BrewService()
+        val cachePrePopulator = CachePrePopulator(brewService)
+
+        // Start cache pre-population in background (limited to first 20 packages)
+        val applicationScope = CoroutineScope(Dispatchers.IO)
+        applicationScope.launch {
+            try {
+                log.info("Starting limited cache pre-population...")
+                cachePrePopulator.prePopulateLimitedPackages(limit = 20)
+                log.info("Limited cache pre-population completed")
+            } catch (e: Exception) {
+                log.error("Error during cache pre-population: ${e.message}", e)
+            }
+        }
 
         install(ContentNegotiation) {
             jackson()
@@ -224,9 +241,116 @@ object ApplicationServer {
                     )
                 }
             }
+
+            // Cache management endpoints
+            get("/api/cache/stats") {
+                log.info("Get cache stats endpoint hit")
+                try {
+                    val stats = brewService.getCacheStats()
+                    call.respond(stats)
+                } catch (e: Exception) {
+                    log.error("Error getting cache stats: ${e.message}", e)
+                    call.respondText(
+                        "Error getting cache stats: ${e.message}",
+                        status = HttpStatusCode.InternalServerError,
+                    )
+                }
+            }
+
+            delete("/api/cache/clear") {
+                log.info("Clear cache endpoint hit")
+                try {
+                    brewService.clearCache()
+                    call.respondText("Cache cleared successfully")
+                } catch (e: Exception) {
+                    log.error("Error clearing cache: ${e.message}", e)
+                    call.respondText(
+                        "Error clearing cache: ${e.message}",
+                        status = HttpStatusCode.InternalServerError,
+                    )
+                }
+            }
+
+            post("/api/cache/pre-populate") {
+                log.info("Pre-populate cache endpoint hit")
+                try {
+                    // Start cache pre-population in background
+                    val applicationScope = CoroutineScope(Dispatchers.IO)
+                    applicationScope.launch {
+                        try {
+                            log.info("Starting manual cache pre-population...")
+                            cachePrePopulator.prePopulateCache()
+                            log.info("Manual cache pre-population completed")
+                        } catch (e: Exception) {
+                            log.error("Error during manual cache pre-population: ${e.message}", e)
+                        }
+                    }
+                    call.respondText("Cache pre-population started in background")
+                } catch (e: Exception) {
+                    log.error("Error starting cache pre-population: ${e.message}", e)
+                    call.respondText(
+                        "Error starting cache pre-population: ${e.message}",
+                        status = HttpStatusCode.InternalServerError,
+                    )
+                }
+            }
+
+            post("/api/cache/pre-populate/limited") {
+                log.info("Pre-populate limited cache endpoint hit")
+                try {
+                    val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                    // Start limited cache pre-population in background
+                    val applicationScope = CoroutineScope(Dispatchers.IO)
+                    applicationScope.launch {
+                        try {
+                            log.info("Starting manual limited cache pre-population with limit: $limit")
+                            cachePrePopulator.prePopulateLimitedPackages(limit)
+                            log.info("Manual limited cache pre-population completed")
+                        } catch (e: Exception) {
+                            log.error("Error during manual limited cache pre-population: ${e.message}", e)
+                        }
+                    }
+                    call.respondText("Limited cache pre-population started in background with limit: $limit")
+                } catch (e: Exception) {
+                    log.error("Error starting limited cache pre-population: ${e.message}", e)
+                    call.respondText(
+                        "Error starting limited cache pre-population: ${e.message}",
+                        status = HttpStatusCode.InternalServerError,
+                    )
+                }
+            }
+
+            post("/api/cache/pre-populate/{packageName}") {
+                val packageName = call.parameters["packageName"]
+                if (packageName.isNullOrBlank()) {
+                    call.respondText("Package name is required", status = HttpStatusCode.BadRequest)
+                    return@post
+                }
+                log.info("Pre-populate cache for specific package endpoint hit: $packageName")
+                try {
+                    // Start cache pre-population in background
+                    val applicationScope = CoroutineScope(Dispatchers.IO)
+                    applicationScope.launch {
+                        try {
+                            log.info("Starting cache pre-population for package: $packageName")
+                            cachePrePopulator.prePopulateSpecificPackages(listOf(packageName))
+                            log.info("Cache pre-population for package $packageName completed")
+                        } catch (e: Exception) {
+                            log.error("Error during cache pre-population for package $packageName: ${e.message}", e)
+                        }
+                    }
+                    call.respondText("Cache pre-population for $packageName started in background")
+                } catch (e: Exception) {
+                    log.error("Error starting cache pre-population for package $packageName: ${e.message}", e)
+                    call.respondText(
+                        "Error starting cache pre-population: ${e.message}",
+                        status = HttpStatusCode.InternalServerError,
+                    )
+                }
+            }
         }
 
-        log.info("Brewanator backend service initialized")
+        log.info("Brewi backend service initialized")
         log.info("BrewService is ready for use")
         log.info("Health check available at: http://localhost:8080/health")
         log.info("List packages available at: http://localhost:8080/api/packages")
@@ -239,6 +363,11 @@ object ApplicationServer {
         log.info("Update and upgrade at: http://localhost:8080/api/packages/upgrade")
         log.info("Run brew doctor at: http://localhost:8080/api/packages/doctor")
         log.info("Get last update time at: http://localhost:8080/api/packages/last-update")
+        log.info("Cache stats available at: http://localhost:8080/api/cache/stats")
+        log.info("Clear cache available at: http://localhost:8080/api/cache/clear")
+        log.info("Pre-populate cache available at: http://localhost:8080/api/cache/pre-populate")
+        log.info("Pre-populate limited cache at: http://localhost:8080/api/cache/pre-populate/limited?limit=20")
+        log.info("Pre-populate specific package at: http://localhost:8080/api/cache/pre-populate/{packageName}")
         log.info("Swagger UI available at: http://localhost:8080/swagger")
     }
 }
