@@ -33,6 +33,8 @@ function App() {
   const [error, setError] = useState(null);
   const [filterValue, setFilterValue] = useState('');
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
+  const [packageDependencies, setPackageDependencies] = useState({});
+  const [hoveredPackage, setHoveredPackage] = useState(null);
 
   // Zustand stores
   const {
@@ -99,7 +101,20 @@ function App() {
   }, []);
 
   const fetchPackageInfo = useCallback(async (packageName, showInUI = true) => {
-    return apiService.fetchPackageInfo(packageName, showInUI);
+    const result = await apiService.fetchPackageInfo(packageName, showInUI);
+    
+    // Store dependency information for hover highlighting
+    if (result && result.isSuccess) {
+      setPackageDependencies(prev => ({
+        ...prev,
+        [packageName]: {
+          dependencies: result.dependencies || [],
+          dependents: result.dependents || []
+        }
+      }));
+    }
+    
+    return result;
   }, []);
 
   const handleRefresh = async () => {
@@ -131,6 +146,14 @@ function App() {
       // Also fetch package commands
       apiService.fetchPackageCommands(packageName, true);
     }
+  };
+
+  const handlePackageHover = (packageName) => {
+    setHoveredPackage(packageName);
+  };
+
+  const handlePackageLeave = () => {
+    setHoveredPackage(null);
   };
 
   const handleCommandClick = command => {
@@ -332,6 +355,10 @@ function App() {
             onPackageClick={handlePackageClick}
             onUninstallClick={handleUninstallClick}
             onDependencyClick={handleDependencyClick}
+            onPackageHover={handlePackageHover}
+            onPackageLeave={handlePackageLeave}
+            hoveredPackage={hoveredPackage}
+            packageDependencies={packageDependencies}
           />
 
           <PackageInfoDialog
@@ -359,6 +386,10 @@ function App() {
             onRefreshInstalledPackages={fetchPackages}
             onInstallSuccess={handleInstallSuccess}
             onDependencyClick={handleDependencyClick}
+            onPackageHover={handlePackageHover}
+            onPackageLeave={handlePackageLeave}
+            hoveredPackage={hoveredPackage}
+            packageDependencies={packageDependencies}
           />
 
           <UpdateUpgradeModal
