@@ -254,22 +254,22 @@ class BrewServiceMockedTest {
     @Test
     fun `getTldrInfo should return cached result when available`() {
         val command = "git"
-        
+
         // Clear cache before test
         brewService.clearCache()
-        
+
         // First call should cache the result
         val firstResult = brewService.getTldrInfo(command)
         assertThat(firstResult).isNotNull()
         assertThat(firstResult.command).isEqualTo(command)
         assertThat(firstResult.isSuccess).isTrue()
         assertThat(firstResult.output).isNotEmpty()
-        
+
         // Second call should return cached result
         val secondResult = brewService.getTldrInfo(command)
         assertThat(secondResult).isNotNull()
         assertThat(secondResult).isEqualTo(firstResult)
-        
+
         // Verify cache stats show the cached entry
         val stats = brewService.getCacheStats()
         assertThat(stats.totalEntries).isGreaterThan(0)
@@ -279,7 +279,7 @@ class BrewServiceMockedTest {
     @Test
     fun `getTldrInfo should handle invalid commands`() {
         val command = "invalid-command-12345"
-        
+
         val result = brewService.getTldrInfo(command)
         assertThat(result).isNotNull()
         assertThat(result.command).isEqualTo(command)
@@ -291,7 +291,7 @@ class BrewServiceMockedTest {
     @Test
     fun `getTldrInfo should handle empty commands`() {
         val command = ""
-        
+
         val result = brewService.getTldrInfo(command)
         assertThat(result).isNotNull()
         assertThat(result.command).isEqualTo(command)

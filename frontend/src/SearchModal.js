@@ -25,8 +25,6 @@ function SearchModal({
   onRefreshInstalledPackages,
   onInstallSuccess,
   onDependencyClick,
-  dependencyMap,
-  dependentsMap,
 }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
@@ -256,8 +254,6 @@ function SearchModal({
                 onPackageClick={handlePackageClick}
                 onInstallClick={handleInstallClick}
                 onDependencyClick={onDependencyClick}
-                dependencyMap={dependencyMap}
-                dependentsMap={dependentsMap}
               />
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>

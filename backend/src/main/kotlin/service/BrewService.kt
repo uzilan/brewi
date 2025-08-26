@@ -568,25 +568,26 @@ class BrewService(
 
     fun getTldrInfo(command: String): TldrResult {
         val cacheKey = "tldr_info:$command"
-        
+
         // Try to get from cache first
         val cachedResult = cacheService.get<TldrResult>(cacheKey)
         if (cachedResult != null) {
             logger.debug("Cache hit for tldr info: $command")
             return cachedResult
         }
-        
+
         logger.debug("Cache miss for tldr info: $command")
         logger.info("Getting tldr info for command: $command")
 
         if (command.isBlank()) {
-            val result = TldrResult(
-                command = command,
-                output = "",
-                isSuccess = false,
-                errorMessage = "Command name cannot be empty",
-                exitCode = 1,
-            )
+            val result =
+                TldrResult(
+                    command = command,
+                    output = "",
+                    isSuccess = false,
+                    errorMessage = "Command name cannot be empty",
+                    exitCode = 1,
+                )
             // Cache error results too (with shorter TTL)
             cacheService.set(cacheKey, result, 60L) // 1 minute TTL for error results
             return result
@@ -595,32 +596,34 @@ class BrewService(
         // Sanitize command to prevent command injection
         val sanitizedCommand = command.trim().replace(Regex("[^a-zA-Z0-9._-]"), "")
         if (sanitizedCommand.isEmpty()) {
-            val result = TldrResult(
-                command = command,
-                output = "",
-                isSuccess = false,
-                errorMessage = "Invalid command name",
-                exitCode = 1,
-            )
+            val result =
+                TldrResult(
+                    command = command,
+                    output = "",
+                    isSuccess = false,
+                    errorMessage = "Invalid command name",
+                    exitCode = 1,
+                )
             // Cache error results too (with shorter TTL)
             cacheService.set(cacheKey, result, 60L) // 1 minute TTL for error results
             return result
         }
 
         val result = commandExecutor.executeTldrCommand(sanitizedCommand, 10)
-        val tldrResult = TldrResult(
-            command = sanitizedCommand,
-            output = result.output,
-            isSuccess = result.isSuccess,
-            errorMessage = result.errorMessage,
-            exitCode = result.exitCode,
-        )
-        
+        val tldrResult =
+            TldrResult(
+                command = sanitizedCommand,
+                output = result.output,
+                isSuccess = result.isSuccess,
+                errorMessage = result.errorMessage,
+                exitCode = result.exitCode,
+            )
+
         // Cache the result with TTL
         val ttl = if (tldrResult.isSuccess) 1800L else 60L // 30 minutes for success, 1 minute for errors
         cacheService.set(cacheKey, tldrResult, ttl)
         logger.debug("Cached tldr info for: $command (TTL: ${ttl}s)")
-        
+
         return tldrResult
     }
 
@@ -675,7 +678,8 @@ class BrewService(
                 logger.debug("Successfully pre-populated package info with dependencies for: $packageName")
             } else {
                 logger.warn(
-                    "Failed to pre-populate package info with dependencies for: $packageName - ${depsResult.errorMessage}",
+                    "Failed to pre-populate package info with dependencies for: " +
+                        "$packageName - ${depsResult.errorMessage}",
                 )
             }
 
@@ -683,7 +687,7 @@ class BrewService(
             val commandsResult = getPackageCommands(packageName)
             if (commandsResult.isSuccess) {
                 logger.debug("Successfully pre-populated package commands for: $packageName")
-                
+
                 // Pre-populate TLDR info for each command provided by the package
                 var tldrSuccessCount = 0
                 if (commandsResult.commands.isNotEmpty()) {

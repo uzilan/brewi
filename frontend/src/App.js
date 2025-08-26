@@ -23,7 +23,6 @@ import PackageInfoDialog from './PackageInfoDialog';
 import PackageList from './PackageList';
 import SearchModal from './SearchModal';
 import { apiService } from './services/apiService';
-import useCacheStore from './stores/cacheStore';
 import useUIStore from './stores/uiStore';
 import UninstallModal from './UninstallModal';
 import UpdateUpgradeModal from './UpdateUpgradeModal';
@@ -66,21 +65,8 @@ function App() {
     clearDialogState,
   } = useUIStore();
 
-  const { dependencyMap, dependentsMap, clearAllCaches, packageInfoCache } =
-    useCacheStore();
-
   // Destructure UI store functions at component level
-  const {
-    setPackageInfo,
-    setPackageInfoLoading,
-    setPackageInfoError,
-    setPackageCommands,
-    setPackageCommandsLoading,
-    setPackageCommandsError,
-    setTldrInfo,
-    setTldrLoading,
-    setTldrError,
-  } = useUIStore();
+  const { setTldrInfo, setTldrLoading, setTldrError } = useUIStore();
 
   const fetchLastUpdateTime = useCallback(async () => {
     try {
@@ -93,24 +79,12 @@ function App() {
     }
   }, []);
 
-  const prefetchAllPackageInfo = useCallback(
-    async (packagesList, onPackageCached = null) => {
-      return apiService.prefetchAllPackageInfo(packagesList, onPackageCached);
-    },
-    []
-  );
-
   const fetchPackages = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const packagesWithInstalledFlag = await apiService.fetchPackages();
       setPackages(packagesWithInstalledFlag);
-
-      // Background prefetching disabled - using modal-based prefetching instead
-      // if (packagesWithInstalledFlag.length > 0) {
-      //   prefetchAllPackageInfo(packagesWithInstalledFlag);
-      // }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -118,263 +92,26 @@ function App() {
     }
   }, []);
 
-  // Check if currently selected package has been cached and update UI
-  useEffect(() => {
-    if (!selectedPackage || (!packageInfoLoading && !packageCommandsLoading)) {
-      return;
-    }
-
-    const packageName = selectedPackage.name;
-    const pollInterval = 500; // Poll every 500ms
-    const maxPollTime = 30000; // Stop polling after 30 seconds
-    let pollCount = 0;
-    const maxPolls = maxPollTime / pollInterval;
-
-    const checkCache = () => {
-      const cacheStore = useCacheStore.getState();
-      let foundData = false;
-
-      // Check if package info is now cached
-      if (packageInfoLoading && cacheStore.hasPackageInfo(packageName)) {
-        const cachedInfo = cacheStore.getPackageInfo(packageName);
-        const enhancedInfo = {
-          ...cachedInfo,
-          dependents: Array.from(cacheStore.getDependents(packageName)),
-        };
-        setPackageInfo(enhancedInfo);
-        setPackageInfoLoading(false);
-        setPackageInfoError(null);
-        foundData = true;
-      }
-
-      // Check if package commands are now cached
-      if (
-        packageCommandsLoading &&
-        cacheStore.hasPackageCommands(packageName)
-      ) {
-        const cachedCommands = cacheStore.getPackageCommands(packageName);
-        setPackageCommands(cachedCommands);
-        setPackageCommandsLoading(false);
-        setPackageCommandsError(null);
-        foundData = true;
-      }
-
-      // If we found data or exceeded max polls, stop polling
-      if (foundData || pollCount >= maxPolls) {
-        return;
-      }
-
-      pollCount++;
-      setTimeout(checkCache, pollInterval);
-    };
-
-    // Start polling
-    checkCache();
-  }, [
-    selectedPackage,
-    packageInfoLoading,
-    packageCommandsLoading,
-    setPackageInfo,
-    setPackageInfoLoading,
-    setPackageInfoError,
-    setPackageCommands,
-    setPackageCommandsLoading,
-    setPackageCommandsError,
-  ]);
-
   // UI store state monitoring removed for cleaner output
 
   const fetchTldrInfo = useCallback(async (command, showInUI = true) => {
     return apiService.fetchTldrInfo(command, showInUI);
   }, []);
 
-  const fetchPackageInfo = useCallback(
-    async (packageName, showInUI = true) => {
-      const cacheStore = useCacheStore.getState();
-
-      // Start fetching commands immediately (don't wait for package info)
-      if (showInUI) {
-        // Check cache first for commands
-        if (cacheStore.hasPackageCommands(packageName)) {
-          const cachedCommands = cacheStore.getPackageCommands(packageName);
-          setPackageCommands(cachedCommands);
-
-          // Prefetch tldr for cached commands if not already cached
-          if (
-            cachedCommands &&
-            cachedCommands.commands &&
-            cachedCommands.commands.length > 0
-          ) {
-            const commandsToPrefetch = cachedCommands.commands.slice(0, 3);
-            commandsToPrefetch.forEach((command, index) => {
-              // Check if tldr is already cached
-              if (!cacheStore.hasTldrInfo(command)) {
-                setTimeout(() => {
-                  apiService.fetchTldrInfo(command, false).catch(err => {
-                    console.error(
-                      `Tldr prefetch failed for ${command}:`,
-                      err.message
-                    );
-                  });
-                }, index * 500); // 500ms delay between each tldr request
-              }
-            });
-          }
-        } else {
-          // Set loading state for commands
-          setPackageCommandsLoading(true);
-          setPackageCommandsError(null);
-
-          // Fetch commands in background with timeout protection
-          const commandsController = new AbortController();
-          const commandsTimeoutId = setTimeout(
-            () => commandsController.abort(),
-            30000
-          ); // 30 second timeout
-
-          fetch(`/api/packages/${packageName}/commands`, {
-            signal: commandsController.signal,
-          })
-            .then(response => {
-              clearTimeout(commandsTimeoutId);
-              if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-              }
-              return response.json();
-            })
-            .then(data => {
-              cacheStore.setPackageCommands(packageName, data);
-              setPackageCommands(data);
-
-              // Prefetch tldr for the first 3 commands of this package
-              if (data && data.commands && data.commands.length > 0) {
-                const commandsToPrefetch = data.commands.slice(0, 3);
-                commandsToPrefetch.forEach((command, index) => {
-                  // Add small delay between requests to avoid overwhelming the server
-                  setTimeout(() => {
-                    apiService.fetchTldrInfo(command, false).catch(err => {
-                      console.error(
-                        `Tldr prefetch failed for ${command}:`,
-                        err.message
-                      );
-                    });
-                  }, index * 500); // 500ms delay between each tldr request
-                });
-              }
-            })
-            .catch(err => {
-              clearTimeout(commandsTimeoutId);
-              if (err.name === 'AbortError') {
-                setPackageCommandsError('Commands timed out');
-              } else {
-                setPackageCommandsError(err.message);
-              }
-              console.error('Error fetching package commands:', err);
-            })
-            .finally(() => {
-              setPackageCommandsLoading(false);
-            });
-        }
-      }
-
-      // Check cache first for package info
-      let packageInfo;
-      if (cacheStore.hasPackageInfo(packageName)) {
-        packageInfo = cacheStore.getPackageInfo(packageName);
-        if (showInUI) {
-          const enhancedInfo = {
-            ...packageInfo,
-            dependents: Array.from(cacheStore.getDependents(packageName)),
-          };
-          setPackageInfo(enhancedInfo);
-        }
-      } else {
-        try {
-          if (showInUI) {
-            setPackageInfoLoading(true);
-            setPackageInfoError(null);
-          }
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-          // Add a "slow request" indicator after 5 seconds
-          const slowRequestId = setTimeout(() => {
-            // Request is taking longer than expected
-          }, 5000);
-
-          try {
-            const response = await fetch(`/api/packages/${packageName}`, {
-              signal: controller.signal,
-            });
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            packageInfo = await response.json();
-            clearTimeout(slowRequestId);
-          } catch (error) {
-            clearTimeout(timeoutId);
-            clearTimeout(slowRequestId);
-            if (error.name === 'AbortError') {
-              throw new Error('Request timed out');
-            }
-            throw error;
-          }
-
-          // Cache the package info
-          cacheStore.setPackageInfo(packageName, packageInfo);
-
-          // Update dependency maps
-          if (packageInfo.dependencies) {
-            cacheStore.setDependencyMap(packageName, packageInfo.dependencies);
-            packageInfo.dependencies.forEach(dep => {
-              cacheStore.addDependent(dep, packageName);
-            });
-          }
-
-          if (showInUI) {
-            const enhancedInfo = {
-              ...packageInfo,
-              dependents: Array.from(cacheStore.getDependents(packageName)),
-            };
-            setPackageInfo(enhancedInfo);
-          }
-        } catch (err) {
-          if (showInUI) {
-            setPackageInfoError(err.message);
-          }
-          console.error('Error fetching package info:', err);
-          throw err;
-        } finally {
-          if (showInUI) {
-            setPackageInfoLoading(false);
-          }
-        }
-      }
-
-      return packageInfo;
-    },
-    [
-      setPackageInfo,
-      setPackageInfoLoading,
-      setPackageInfoError,
-      setPackageCommands,
-      setPackageCommandsLoading,
-      setPackageCommandsError,
-    ]
-  );
+  const fetchPackageInfo = useCallback(async (packageName, showInUI = true) => {
+    return apiService.fetchPackageInfo(packageName, showInUI);
+  }, []);
 
   const handleRefresh = async () => {
     await fetchPackages();
     await fetchLastUpdateTime();
-    // Clear cache since package information might have changed
-    // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
-    clearAllCaches();
   };
 
   const handlePackageClick = pkg => {
     setSelectedPackage(pkg);
     fetchPackageInfo(pkg.name, true);
-    // Commands will be fetched automatically by fetchPackageInfo
+    // Also fetch package commands
+    apiService.fetchPackageCommands(pkg.name, true);
   };
 
   const handleDependencyClick = packageName => {
@@ -383,14 +120,16 @@ function App() {
     if (pkg) {
       setSelectedPackage(pkg);
       fetchPackageInfo(packageName, true);
-      // Commands will be fetched automatically by fetchPackageInfo
+      // Also fetch package commands
+      apiService.fetchPackageCommands(packageName, true);
     } else {
       // If the package is not in the current list (e.g., it's a dependency but not installed),
       // create a temporary package object and show its info
       const tempPkg = { name: packageName, isInstalled: false };
       setSelectedPackage(tempPkg);
       fetchPackageInfo(packageName, true);
-      // Commands will be fetched automatically by fetchPackageInfo
+      // Also fetch package commands
+      apiService.fetchPackageCommands(packageName, true);
     }
   };
 
@@ -447,17 +186,11 @@ function App() {
   const handleUninstallSuccess = () => {
     const packageName = selectedPackageForUninstall?.name;
     fetchPackages();
-    // Clear cache since dependencies might have changed
-    // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
-    clearAllCaches();
     showSnackbar(`Successfully uninstalled ${packageName}`, 'success');
   };
 
   const handleInstallSuccess = packageName => {
     fetchPackages();
-    // Clear cache since dependencies might have changed
-    // Note: Dependency maps will be rebuilt by prefetchAllPackageInfo
-    clearAllCaches();
     showSnackbar(`Successfully installed ${packageName}`, 'success');
   };
 
@@ -599,9 +332,6 @@ function App() {
             onPackageClick={handlePackageClick}
             onUninstallClick={handleUninstallClick}
             onDependencyClick={handleDependencyClick}
-            dependencyMap={dependencyMap}
-            dependentsMap={dependentsMap}
-            packageInfoCache={packageInfoCache}
           />
 
           <PackageInfoDialog
@@ -629,8 +359,6 @@ function App() {
             onRefreshInstalledPackages={fetchPackages}
             onInstallSuccess={handleInstallSuccess}
             onDependencyClick={handleDependencyClick}
-            dependencyMap={dependencyMap}
-            dependentsMap={dependentsMap}
           />
 
           <UpdateUpgradeModal

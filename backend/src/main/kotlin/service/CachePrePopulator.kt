@@ -66,15 +66,20 @@ class CachePrePopulator(
                                 }
                             }
 
-                            val packageDataSuccessful = basicResult.isSuccess && depsResult.isSuccess && commandsResult.isSuccess
-                            
+                            val packageDataSuccessful = basicResult.isSuccess && 
+                                depsResult.isSuccess && commandsResult.isSuccess
+
                             if (packageDataSuccessful) {
                                 logger.debug(
-                                    "Successfully cached package data (basic, deps, commands) for: $packageName, cached TLDR for $tldrSuccessCount commands",
+                                    "Successfully cached package data (basic, deps, commands) for: " +
+                                        "$packageName, cached TLDR for $tldrSuccessCount commands",
                                 )
                             } else {
                                 logger.warn(
-                                    "Failed to cache some package data for: $packageName - basic: ${basicResult.errorMessage}, deps: ${depsResult.errorMessage}, commands: ${commandsResult.errorMessage}",
+                                    "Failed to cache some package data for: $packageName - " +
+                                        "basic: ${basicResult.errorMessage}, " +
+                                        "deps: ${depsResult.errorMessage}, " +
+                                        "commands: ${commandsResult.errorMessage}",
                                 )
                             }
                             packageDataSuccessful
@@ -147,15 +152,20 @@ class CachePrePopulator(
                             }
                         }
 
-                        val packageDataSuccessful = basicResult.isSuccess && depsResult.isSuccess && commandsResult.isSuccess
-                        
+                        val packageDataSuccessful = basicResult.isSuccess && 
+                            depsResult.isSuccess && commandsResult.isSuccess
+
                         if (packageDataSuccessful) {
                             logger.debug(
-                                "Successfully cached package data (basic, deps, commands) for: $packageName, cached TLDR for $tldrSuccessCount commands",
+                                "Successfully cached package data (basic, deps, commands) for: " +
+                                    "$packageName, cached TLDR for $tldrSuccessCount commands",
                             )
                         } else {
                             logger.warn(
-                                "Failed to cache some package data for: $packageName - basic: ${basicResult.errorMessage}, deps: ${depsResult.errorMessage}, commands: ${commandsResult.errorMessage}",
+                                "Failed to cache some package data for: $packageName - " +
+                                    "basic: ${basicResult.errorMessage}, " +
+                                    "deps: ${depsResult.errorMessage}, " +
+                                    "commands: ${commandsResult.errorMessage}",
                             )
                         }
                         packageName to packageDataSuccessful

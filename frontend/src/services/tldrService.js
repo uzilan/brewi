@@ -1,21 +1,8 @@
-import useCacheStore from '../stores/cacheStore';
 import useUIStore from '../stores/uiStore';
 
 export const tldrService = {
   async fetchTldrInfo(command, showInUI = true) {
-    const cacheStore = useCacheStore.getState();
     const uiStore = useUIStore.getState();
-
-    // Check cache first
-    if (cacheStore.hasTldrInfo(command)) {
-      const cachedTldr = cacheStore.getTldrInfo(command);
-      if (showInUI) {
-        uiStore.setTldrInfo(cachedTldr);
-      }
-      return cachedTldr;
-    }
-
-    // Fetch from API if not in cache
 
     try {
       if (showInUI) {
@@ -28,9 +15,6 @@ export const tldrService = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-
-      // Cache the tldr info
-      cacheStore.setTldrInfo(command, data);
 
       if (showInUI) {
         uiStore.setTldrInfo(data);

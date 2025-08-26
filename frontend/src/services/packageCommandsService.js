@@ -1,19 +1,8 @@
-import useCacheStore from '../stores/cacheStore';
 import useUIStore from '../stores/uiStore';
 
 export const packageCommandsService = {
   async fetchPackageCommands(packageName, showInUI = true) {
-    const cacheStore = useCacheStore.getState();
     const uiStore = useUIStore.getState();
-
-    // Check cache first
-    if (cacheStore.hasPackageCommands(packageName)) {
-      const cachedCommands = cacheStore.getPackageCommands(packageName);
-      if (showInUI) {
-        uiStore.setPackageCommands(cachedCommands);
-      }
-      return cachedCommands;
-    }
 
     try {
       if (showInUI) {
@@ -26,9 +15,6 @@ export const packageCommandsService = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-
-      // Cache the package commands
-      cacheStore.setPackageCommands(packageName, data);
 
       if (showInUI) {
         uiStore.setPackageCommands(data);

@@ -150,16 +150,16 @@ class CachePrePopulatorTest {
             // Verify that we have entries for different cache types
             // This test verifies that the pre-population is working comprehensively
             val testPackage = "node" // This should be in our mock data
-            
+
             // Test that all cache types are populated
             val packageInfo = brewService.getPackageInfo(testPackage)
             val packageInfoWithDeps = brewService.getPackageInfoWithDependencies(testPackage, emptyList())
             val packageCommands = brewService.getPackageCommands(testPackage)
-            
+
             assertThat(packageInfo.isSuccess).isTrue()
             assertThat(packageInfoWithDeps.isSuccess).isTrue()
             assertThat(packageCommands.isSuccess).isTrue()
-            
+
             // Verify that subsequent calls hit the cache
             val statsAfterAccess = brewService.getCacheStats()
             assertThat(statsAfterAccess.hitCount).isGreaterThan(stats.hitCount)
