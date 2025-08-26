@@ -29,6 +29,7 @@ function SearchModal({
   onPackageLeave,
   hoveredPackage,
   packageDependencies,
+  dependenciesLoading,
 }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
@@ -240,6 +241,7 @@ function SearchModal({
                 onPackageLeave={onPackageLeave}
                 hoveredPackage={hoveredPackage}
                 packageDependencies={packageDependencies}
+                dependenciesLoading={dependenciesLoading}
               />
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>

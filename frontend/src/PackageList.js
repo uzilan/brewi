@@ -21,6 +21,7 @@ function PackageList({
   onPackageLeave,
   hoveredPackage,
   packageDependencies,
+  dependenciesLoading,
 }) {
   if (packages.length === 0) {
     return (
@@ -33,17 +34,25 @@ function PackageList({
   }
 
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: {
-          xs: '1fr',
-          sm: 'repeat(2, 1fr)',
-          md: 'repeat(5, 1fr)',
-        },
-        gap: 2,
-      }}
-    >
+    <Box>
+      {dependenciesLoading && (
+        <Box sx={{ mb: 2, textAlign: 'center' }}>
+          <Typography variant="caption" color="text.secondary">
+            Loading dependency information for hover highlighting...
+          </Typography>
+        </Box>
+      )}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(5, 1fr)',
+          },
+          gap: 2,
+        }}
+      >
       {packages.map((pkg, index) => {
         // Determine if this package should be highlighted based on hover state
         const isHighlighted =
@@ -174,6 +183,7 @@ function PackageList({
           </Card>
         );
       })}
+      </Box>
     </Box>
   );
 }
