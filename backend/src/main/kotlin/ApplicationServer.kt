@@ -10,6 +10,7 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondFile
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -67,6 +68,73 @@ object ApplicationServer {
             get("/health") {
                 log.info("Health endpoint hit")
                 call.respondText("OK")
+            }
+
+            // Serve the main React app
+            get("/") {
+                call.respondText(
+                    java.io.File("src/main/resources/static/index.html").readText(),
+                    io.ktor.http.ContentType.Text.Html,
+                )
+            }
+
+            // Serve favicon.ico
+            get("/favicon.ico") {
+                val file = java.io.File("src/main/resources/static/favicon.ico")
+                if (file.exists()) {
+                    call.respondFile(file)
+                } else {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            }
+
+            // Serve robots.txt
+            get("/robots.txt") {
+                val file = java.io.File("src/main/resources/static/robots.txt")
+                if (file.exists()) {
+                    call.respondFile(file)
+                } else {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            }
+
+            // Serve CSS files
+            get("/static/css/{fileName}") {
+                val fileName = call.parameters["fileName"] ?: ""
+                log.info("CSS file request for: $fileName")
+                val file = java.io.File("src/main/resources/static/static/css/$fileName")
+                if (file.exists() && file.isFile) {
+                    call.respondText(file.readText(), io.ktor.http.ContentType.Text.CSS)
+                } else {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            }
+
+            // Serve JS files
+            get("/static/js/{fileName}") {
+                val fileName = call.parameters["fileName"] ?: ""
+                log.info("JS file request for: $fileName")
+                val file = java.io.File("src/main/resources/static/static/js/$fileName")
+                if (file.exists() && file.isFile) {
+                    call.respondText(file.readText(), io.ktor.http.ContentType.Application.JavaScript)
+                } else {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            }
+
+            // Handle client-side routing by serving index.html for all non-API routes
+            get("/{...}") {
+                val path = call.parameters.getAll("...")?.firstOrNull() ?: ""
+                // Don't serve index.html for API routes or static files
+                if (!path.startsWith("api/") && !path.startsWith("static/") &&
+                    !path.startsWith("swagger") && path != "favicon.ico" &&
+                    path != "robots.txt" && path != "health"
+                ) {
+                    call.respondText(
+                        java.io.File("src/main/resources/static/index.html").readText(),
+                        io.ktor.http.ContentType.Text.Html,
+                    )
+                }
             }
 
             get("/api/packages/{packageName}") {

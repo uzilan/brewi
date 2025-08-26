@@ -23,7 +23,6 @@ function PackageList({
   packageDependencies,
   packageDependents,
   packageDescriptions,
-  dependenciesLoading,
 }) {
   if (packages.length === 0) {
     return (
@@ -37,13 +36,6 @@ function PackageList({
 
   return (
     <Box>
-      {dependenciesLoading && (
-        <Box sx={{ mb: 2, textAlign: 'center' }}>
-          <Typography variant='caption' color='text.secondary'>
-            Loading dependency information for hover highlighting...
-          </Typography>
-        </Box>
-      )}
       <Box
         sx={{
           display: 'grid',

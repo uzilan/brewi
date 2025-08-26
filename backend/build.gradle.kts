@@ -5,6 +5,7 @@ plugins {
     application
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
     jacoco
+    id("com.github.node-gradle.node") version "7.1.0"
 }
 
 group = "com.brewanator"
@@ -73,6 +74,46 @@ configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
 
 application {
     mainClass.set("ApplicationServer")
+}
+
+// Node.js configuration
+node {
+    version.set("20.11.0")
+    npmVersion.set("10.2.4")
+    download.set(true)
+    workDir.set(file("${layout.buildDirectory}/nodejs"))
+    npmWorkDir.set(file("${layout.buildDirectory}/npm"))
+    nodeProjectDir.set(file("../frontend"))
+}
+
+// Task to build the frontend using npm
+tasks.register<Exec>("buildFrontend") {
+    dependsOn("npm_install")
+    workingDir = file("../frontend")
+    commandLine("npm", "run", "build")
+}
+
+// Task to copy frontend build files to backend resources
+tasks.register<Copy>("copyFrontendBuild") {
+    dependsOn("buildFrontend")
+    from("../frontend/build")
+    into("src/main/resources/static")
+    include("**/*")
+}
+
+// Make the jar task depend on copying frontend files
+tasks.named("jar") {
+    dependsOn("copyFrontendBuild")
+}
+
+// Make the run task depend on copying frontend files
+tasks.named("run") {
+    dependsOn("copyFrontendBuild")
+}
+
+// Make processResources depend on copyFrontendBuild
+tasks.named("processResources") {
+    dependsOn("copyFrontendBuild")
 }
 
 // JaCoCo configuration
