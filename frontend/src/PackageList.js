@@ -21,6 +21,8 @@ function PackageList({
   onPackageLeave,
   hoveredPackage,
   packageDependencies,
+  packageDependents,
+  packageDescriptions,
   dependenciesLoading,
 }) {
   if (packages.length === 0) {
@@ -58,13 +60,12 @@ function PackageList({
           const isHighlighted =
             hoveredPackage &&
             hoveredPackage !== pkg.name &&
-            packageDependencies[hoveredPackage] &&
-            (packageDependencies[hoveredPackage].dependencies.includes(
-              pkg.name
-            ) ||
-              packageDependencies[hoveredPackage].dependents.includes(
+            ((packageDependencies[hoveredPackage] &&
+              packageDependencies[hoveredPackage].dependencies.includes(
                 pkg.name
-              ));
+              )) ||
+              (packageDependents[hoveredPackage] &&
+                packageDependents[hoveredPackage].includes(pkg.name)));
 
           const isHovered = hoveredPackage === pkg.name;
 
@@ -140,6 +141,23 @@ function PackageList({
                         }}
                       >
                         Version: {pkg.version}
+                      </Typography>
+                    )}
+                    {(packageDescriptions[pkg.name] || pkg.description) && (
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        sx={{
+                          fontSize: '0.7rem',
+                          lineHeight: 1.2,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                        }}
+                      >
+                        {packageDescriptions[pkg.name] || pkg.description}
                       </Typography>
                     )}
                   </Box>

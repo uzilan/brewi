@@ -195,7 +195,7 @@ class BrewService(
      * Gets packages that depend on a specific package
      */
     fun getPackageDependents(packageName: String): BrewCommandResult =
-        commandExecutor.executeBrewCommand(listOf("uses", packageName))
+        commandExecutor.executeBrewCommand(listOf("uses", "--installed", packageName))
 
     /**
      * Gets the commands that a package provides once installed

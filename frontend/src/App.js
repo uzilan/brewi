@@ -34,6 +34,8 @@ function App() {
   const [filterValue, setFilterValue] = useState('');
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
   const [packageDependencies, setPackageDependencies] = useState({});
+  const [packageDependents, setPackageDependents] = useState({});
+  const [packageDescriptions, setPackageDescriptions] = useState({});
   const [hoveredPackage, setHoveredPackage] = useState(null);
   const [dependenciesLoading, setDependenciesLoading] = useState(false);
 
@@ -113,31 +115,84 @@ function App() {
 
     // Process batches with delays to be gentle on the backend
     for (const batch of batches) {
-      await Promise.all(
+      const batchResults = await Promise.all(
         batch.map(async pkg => {
           try {
             const result = await apiService.fetchPackageInfo(pkg.name, false); // Don't show in UI
             if (result && result.isSuccess) {
-              setPackageDependencies(prev => ({
-                ...prev,
-                [pkg.name]: {
-                  dependencies: result.dependencies || [],
-                  dependents: result.dependents || [],
-                },
-              }));
+              return {
+                name: pkg.name,
+                dependencies: result.dependencies || [],
+                dependents: result.dependents || [],
+                description: result.description || '',
+              };
             }
           } catch (err) {
             // Silently fail for individual packages
             // Failed to fetch dependencies for ${pkg.name}
           }
+          return null;
         })
       );
+
+      // Update state with batch results
+      const validResults = batchResults.filter(result => result !== null);
+      if (validResults.length > 0) {
+        setPackageDependencies(prev => {
+          const newDeps = { ...prev };
+          validResults.forEach(result => {
+            newDeps[result.name] = {
+              dependencies: result.dependencies,
+              dependents: result.dependents,
+            };
+          });
+          return newDeps;
+        });
+
+        // Store descriptions
+        setPackageDescriptions(prev => {
+          const newDescriptions = { ...prev };
+          validResults.forEach(result => {
+            if (result.description) {
+              newDescriptions[result.name] = result.description;
+            }
+          });
+          return newDescriptions;
+        });
+
+        // Build reverse map immediately after this batch
+        setTimeout(() => {
+          buildReverseDependencyMap();
+        }, 100);
+      }
 
       // Small delay between batches
       await new Promise(resolve => setTimeout(resolve, 200));
     }
 
     setDependenciesLoading(false);
+  };
+
+  const buildReverseDependencyMap = () => {
+    const reverseMap = {};
+
+    // Initialize empty arrays for all packages
+    Object.keys(packageDependencies).forEach(pkgName => {
+      reverseMap[pkgName] = [];
+    });
+
+    // Build the reverse map by cross-referencing dependencies
+    Object.entries(packageDependencies).forEach(([pkgName, depsData]) => {
+      if (depsData.dependencies) {
+        depsData.dependencies.forEach(depName => {
+          if (reverseMap[depName]) {
+            reverseMap[depName].push(pkgName);
+          }
+        });
+      }
+    });
+
+    setPackageDependents(reverseMap);
   };
 
   // UI store state monitoring removed for cleaner output
@@ -151,17 +206,58 @@ function App() {
 
     // Store dependency information for hover highlighting
     if (result && result.isSuccess) {
-      setPackageDependencies(prev => ({
-        ...prev,
-        [packageName]: {
-          dependencies: result.dependencies || [],
-          dependents: result.dependents || [],
-        },
-      }));
+      setPackageDependencies(prev => {
+        const newDeps = {
+          ...prev,
+          [packageName]: {
+            dependencies: result.dependencies || [],
+            dependents: result.dependents || [],
+          },
+        };
+
+        // Update the reverse dependency map
+        setTimeout(() => {
+          updateReverseDependencyMap(newDeps);
+        }, 100);
+
+        return newDeps;
+      });
+
+      // Store description if available
+      if (result.description) {
+        setPackageDescriptions(prev => ({
+          ...prev,
+          [packageName]: result.description,
+        }));
+      }
     }
 
     return result;
   }, []);
+
+  const updateReverseDependencyMap = depsData => {
+    const reverseMap = { ...packageDependents };
+
+    // Initialize empty arrays for new packages
+    Object.keys(depsData).forEach(pkgName => {
+      if (!reverseMap[pkgName]) {
+        reverseMap[pkgName] = [];
+      }
+    });
+
+    // Build the reverse map by cross-referencing dependencies
+    Object.entries(depsData).forEach(([pkgName, depsInfo]) => {
+      if (depsInfo.dependencies) {
+        depsInfo.dependencies.forEach(depName => {
+          if (reverseMap[depName] && !reverseMap[depName].includes(pkgName)) {
+            reverseMap[depName].push(pkgName);
+          }
+        });
+      }
+    });
+
+    setPackageDependents(reverseMap);
+  };
 
   const handleRefresh = async () => {
     await fetchPackages();
@@ -405,6 +501,8 @@ function App() {
             onPackageLeave={handlePackageLeave}
             hoveredPackage={hoveredPackage}
             packageDependencies={packageDependencies}
+            packageDependents={packageDependents}
+            packageDescriptions={packageDescriptions}
             dependenciesLoading={dependenciesLoading}
           />
 
@@ -437,6 +535,8 @@ function App() {
             onPackageLeave={handlePackageLeave}
             hoveredPackage={hoveredPackage}
             packageDependencies={packageDependencies}
+            packageDependents={packageDependents}
+            packageDescriptions={packageDescriptions}
             dependenciesLoading={dependenciesLoading}
           />
 

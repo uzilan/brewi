@@ -29,6 +29,8 @@ function SearchModal({
   onPackageLeave,
   hoveredPackage,
   packageDependencies,
+  packageDependents,
+  packageDescriptions,
   dependenciesLoading,
 }) {
   const [query, setQuery] = useState('');
@@ -241,6 +243,8 @@ function SearchModal({
                 onPackageLeave={onPackageLeave}
                 hoveredPackage={hoveredPackage}
                 packageDependencies={packageDependencies}
+                packageDependents={packageDependents}
+                packageDescriptions={packageDescriptions}
                 dependenciesLoading={dependenciesLoading}
               />
             ) : (
