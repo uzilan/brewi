@@ -88,13 +88,12 @@ function App() {
       setError(null);
       const packagesWithInstalledFlag = await apiService.fetchPackages();
       setPackages(packagesWithInstalledFlag);
-      
+
       // Start pre-populating dependency information in the background
       // This won't block the UI from showing packages
       setTimeout(() => {
         prePopulateDependencies(packagesWithInstalledFlag);
       }, 1000); // Wait 1 second after packages load
-      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -102,20 +101,20 @@ function App() {
     }
   }, []);
 
-  const prePopulateDependencies = async (packagesList) => {
+  const prePopulateDependencies = async packagesList => {
     setDependenciesLoading(true);
-    
+
     // Process in small batches to avoid overwhelming the backend
     const batchSize = 3;
     const batches = [];
     for (let i = 0; i < packagesList.length; i += batchSize) {
       batches.push(packagesList.slice(i, i + batchSize));
     }
-    
+
     // Process batches with delays to be gentle on the backend
     for (const batch of batches) {
       await Promise.all(
-        batch.map(async (pkg) => {
+        batch.map(async pkg => {
           try {
             const result = await apiService.fetchPackageInfo(pkg.name, false); // Don't show in UI
             if (result && result.isSuccess) {
@@ -123,21 +122,21 @@ function App() {
                 ...prev,
                 [pkg.name]: {
                   dependencies: result.dependencies || [],
-                  dependents: result.dependents || []
-                }
+                  dependents: result.dependents || [],
+                },
               }));
             }
           } catch (err) {
             // Silently fail for individual packages
-            console.debug(`Failed to fetch dependencies for ${pkg.name}:`, err.message);
+            // Failed to fetch dependencies for ${pkg.name}
           }
         })
       );
-      
+
       // Small delay between batches
       await new Promise(resolve => setTimeout(resolve, 200));
     }
-    
+
     setDependenciesLoading(false);
   };
 
