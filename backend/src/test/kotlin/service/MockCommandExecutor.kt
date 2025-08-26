@@ -82,6 +82,31 @@ class MockCommandExecutor : CommandExecutor {
                         """.trimIndent(),
                     exitCode = 0,
                 ),
+            "info test-package" to
+                BrewCommandResult(
+                    isSuccess = true,
+                    output =
+                        """
+                        ==> test-package: stable 1.0.0 (bottled), HEAD
+                        A test package for unit testing
+                        https://example.com/test-package
+                        Installed
+                        /opt/homebrew/Cellar/test-package/1.0.0 (10 files, 1.2MB) *
+                        From: https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/t/test-package.rb
+                        License: MIT
+                        ==> Dependencies
+                        Build: pkg-config ✔
+                        Required: openssl@3 ✔, zlib ✔
+                        ==> Options
+                        --HEAD
+                                Install HEAD version
+                        ==> Analytics
+                        install: 1,000 (30 days), 3,000 (90 days), 10,000 (365 days)
+                        install-on-request: 800 (30 days), 2,400 (90 days), 8,000 (365 days)
+                        build-error: 5 (30 days)
+                        """.trimIndent(),
+                    exitCode = 0,
+                ),
             // Dependencies
             "deps node" to
                 BrewCommandResult(
@@ -106,6 +131,16 @@ class MockCommandExecutor : CommandExecutor {
                         """.trimIndent(),
                     exitCode = 0,
                 ),
+            "deps test-package" to
+                BrewCommandResult(
+                    isSuccess = true,
+                    output =
+                        """
+                        openssl@3
+                        zlib
+                        """.trimIndent(),
+                    exitCode = 0,
+                ),
             // Dependents
             "uses openssl@3" to
                 BrewCommandResult(
@@ -117,6 +152,16 @@ class MockCommandExecutor : CommandExecutor {
                         git
                         curl
                         wget
+                        """.trimIndent(),
+                    exitCode = 0,
+                ),
+            "uses test-package" to
+                BrewCommandResult(
+                    isSuccess = true,
+                    output =
+                        """
+                        some-other-package
+                        another-package
                         """.trimIndent(),
                     exitCode = 0,
                 ),

@@ -46,15 +46,40 @@ class CachePrePopulator(
                 installedPackages.map { packageName ->
                     brewCommandScope.async {
                         try {
-                            val result = brewService.getPackageInfo(packageName)
-                            if (result.isSuccess) {
-                                logger.debug("Successfully cached package info for: $packageName")
-                            } else {
-                                logger.warn("Failed to cache package info for: $packageName - ${result.errorMessage}")
+                            // Cache basic package info, package info with dependencies, and package commands
+                            val basicResult = brewService.getPackageInfo(packageName)
+                            val depsResult = brewService.getPackageInfoWithDependencies(packageName, emptyList())
+                            val commandsResult = brewService.getPackageCommands(packageName)
+
+                            // Cache TLDR info for each command provided by the package
+                            var tldrSuccessCount = 0
+                            if (commandsResult.isSuccess && commandsResult.commands.isNotEmpty()) {
+                                commandsResult.commands.forEach { command ->
+                                    try {
+                                        val tldrResult = brewService.getTldrInfo(command)
+                                        if (tldrResult.isSuccess) {
+                                            tldrSuccessCount++
+                                        }
+                                    } catch (e: Exception) {
+                                        logger.debug("Failed to cache TLDR for command $command: ${e.message}")
+                                    }
+                                }
                             }
-                            result.isSuccess
+
+                            val packageDataSuccessful = basicResult.isSuccess && depsResult.isSuccess && commandsResult.isSuccess
+                            
+                            if (packageDataSuccessful) {
+                                logger.debug(
+                                    "Successfully cached package data (basic, deps, commands) for: $packageName, cached TLDR for $tldrSuccessCount commands",
+                                )
+                            } else {
+                                logger.warn(
+                                    "Failed to cache some package data for: $packageName - basic: ${basicResult.errorMessage}, deps: ${depsResult.errorMessage}, commands: ${commandsResult.errorMessage}",
+                                )
+                            }
+                            packageDataSuccessful
                         } catch (e: Exception) {
-                            logger.error("Error caching package info for $packageName: ${e.message}", e)
+                            logger.error("Error caching package data for $packageName: ${e.message}", e)
                             false
                         }
                     }
@@ -102,15 +127,40 @@ class CachePrePopulator(
             packages.map { packageName ->
                 brewCommandScope.async {
                     try {
-                        val result = brewService.getPackageInfo(packageName)
-                        if (result.isSuccess) {
-                            logger.debug("Successfully cached package info for: $packageName")
-                        } else {
-                            logger.warn("Failed to cache package info for: $packageName - ${result.errorMessage}")
+                        // Cache basic package info, package info with dependencies, and package commands
+                        val basicResult = brewService.getPackageInfo(packageName)
+                        val depsResult = brewService.getPackageInfoWithDependencies(packageName, emptyList())
+                        val commandsResult = brewService.getPackageCommands(packageName)
+
+                        // Cache TLDR info for each command provided by the package
+                        var tldrSuccessCount = 0
+                        if (commandsResult.isSuccess && commandsResult.commands.isNotEmpty()) {
+                            commandsResult.commands.forEach { command ->
+                                try {
+                                    val tldrResult = brewService.getTldrInfo(command)
+                                    if (tldrResult.isSuccess) {
+                                        tldrSuccessCount++
+                                    }
+                                } catch (e: Exception) {
+                                    logger.debug("Failed to cache TLDR for command $command: ${e.message}")
+                                }
+                            }
                         }
-                        packageName to result.isSuccess
+
+                        val packageDataSuccessful = basicResult.isSuccess && depsResult.isSuccess && commandsResult.isSuccess
+                        
+                        if (packageDataSuccessful) {
+                            logger.debug(
+                                "Successfully cached package data (basic, deps, commands) for: $packageName, cached TLDR for $tldrSuccessCount commands",
+                            )
+                        } else {
+                            logger.warn(
+                                "Failed to cache some package data for: $packageName - basic: ${basicResult.errorMessage}, deps: ${depsResult.errorMessage}, commands: ${commandsResult.errorMessage}",
+                            )
+                        }
+                        packageName to packageDataSuccessful
                     } catch (e: Exception) {
-                        logger.error("Error caching package info for $packageName: ${e.message}", e)
+                        logger.error("Error caching package data for $packageName: ${e.message}", e)
                         packageName to false
                     }
                 }

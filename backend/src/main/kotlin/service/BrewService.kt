@@ -74,11 +74,23 @@ class BrewService(
     /**
      * Gets comprehensive package information including dependencies and dependents
      * Optimized version that doesn't cross-reference all installed packages
+     * Cached for improved performance
      */
     fun getPackageInfoWithDependencies(
         packageName: String,
         installedPackages: List<String>,
     ): model.BrewPackageInfo {
+        val cacheKey = "package_info_with_deps:$packageName"
+
+        // Try to get from cache first
+        val cachedResult = cacheService.get<model.BrewPackageInfo>(cacheKey)
+        if (cachedResult != null) {
+            logger.debug("Cache hit for package info with dependencies: $packageName")
+            return cachedResult
+        }
+
+        logger.debug("Cache miss for package info with dependencies: $packageName")
+
         val infoResult = getPackageInfo(packageName)
         val depsResult = getPackageDependencies(packageName)
         val usesResult = getPackageDependents(packageName)
@@ -112,15 +124,22 @@ class BrewService(
                 null
             }
 
-        return model.BrewPackageInfo(
-            name = packageName,
-            output = infoResult.output,
-            isSuccess = infoResult.isSuccess,
-            errorMessage = infoResult.errorMessage,
-            dependencies = dependencies,
-            dependents = dependents,
-            description = description,
-        )
+        val result =
+            model.BrewPackageInfo(
+                name = packageName,
+                output = infoResult.output,
+                isSuccess = infoResult.isSuccess,
+                errorMessage = infoResult.errorMessage,
+                dependencies = dependencies,
+                dependents = dependents,
+                description = description,
+            )
+
+        // Cache the result with TTL
+        cacheService.set(cacheKey, result, 300) // 5 minutes TTL
+        logger.debug("Cached package info with dependencies for: $packageName")
+
+        return result
     }
 
     /**
@@ -134,10 +153,13 @@ class BrewService(
                     300,
                 ) // 5 minute timeout for installs
 
-        // Invalidate cache on successful install
+        // Invalidate cache and pre-populate on successful install
         if (result.isSuccess) {
             invalidatePackageCache(packageName)
             logger.info("Invalidated cache for installed package: $packageName")
+
+            // Pre-populate cache for the newly installed package
+            prePopulatePackageCache(packageName)
         }
 
         return result
@@ -178,124 +200,143 @@ class BrewService(
     /**
      * Gets the commands that a package provides once installed
      * This checks the package's bin directory and uses brew list --formula for additional info
+     * Cached for improved performance
      */
     fun getPackageCommands(packageName: String): model.BrewPackageCommands {
-        return try {
-            // First check if the package is installed
-            val listResult = commandExecutor.executeBrewCommand(listOf("list", "--formula"))
-            if (!listResult.isSuccess) {
-                return model.BrewPackageCommands(
-                    packageName = packageName,
-                    commands = emptyList(),
-                    isSuccess = false,
-                    errorMessage = "Failed to check if package is installed: ${listResult.errorMessage}",
-                )
-            }
+        val cacheKey = "package_commands:$packageName"
 
-            val installedPackages =
-                listResult.output
-                    .lines()
-                    .filter { it.isNotBlank() }
-                    .map { it.trim() }
-
-            if (!installedPackages.contains(packageName)) {
-                return model.BrewPackageCommands(
-                    packageName = packageName,
-                    commands = emptyList(),
-                    isSuccess = false,
-                    errorMessage = "Package '$packageName' is not installed",
-                )
-            }
-
-            // Get the Homebrew prefix to find the package's bin directory
-            val prefixResult = commandExecutor.executeBrewCommand(listOf("--prefix"))
-            if (!prefixResult.isSuccess) {
-                return model.BrewPackageCommands(
-                    packageName = packageName,
-                    commands = emptyList(),
-                    isSuccess = false,
-                    errorMessage = "Failed to get Homebrew prefix: ${prefixResult.errorMessage}",
-                )
-            }
-
-            val homebrewPrefix = prefixResult.output.trim()
-            val packageBinDir = java.io.File("$homebrewPrefix/bin")
-
-            if (!packageBinDir.exists()) {
-                return model.BrewPackageCommands(
-                    packageName = packageName,
-                    commands = emptyList(),
-                    isSuccess = false,
-                    errorMessage = "Package bin directory not found",
-                )
-            }
-
-            // Get package info to find the actual package path
-            val infoResult = commandExecutor.executeBrewCommand(listOf("info", packageName))
-            if (!infoResult.isSuccess) {
-                return model.BrewPackageCommands(
-                    packageName = packageName,
-                    commands = emptyList(),
-                    isSuccess = false,
-                    errorMessage = "Failed to get package info: ${infoResult.errorMessage}",
-                )
-            }
-
-            // Extract the package path from brew info output
-            val packagePath = extractPackagePathFromInfo(infoResult.output, packageName)
-            if (packagePath == null) {
-                return model.BrewPackageCommands(
-                    packageName = packageName,
-                    commands = emptyList(),
-                    isSuccess = false,
-                    errorMessage = "Could not determine package installation path",
-                )
-            }
-
-            // Check the package's bin directory for executable files
-            val packageBinPath = java.io.File("$packagePath/bin")
-            val commands = mutableSetOf<String>()
-
-            if (packageBinPath.exists() && packageBinPath.isDirectory) {
-                packageBinPath
-                    .listFiles()
-                    ?.filter { it.isFile && it.canExecute() }
-                    ?.map { it.name }
-                    ?.let { commands.addAll(it) }
-            }
-
-            // Also check for commands in the main bin directory that might be symlinked to this package
-            val allBinFiles =
-                packageBinDir
-                    .listFiles()
-                    ?.filter { it.isFile && it.canExecute() }
-                    ?.filter { file ->
-                        try {
-                            val canonicalPath = file.canonicalPath
-                            canonicalPath.contains(packagePath)
-                        } catch (e: Exception) {
-                            false
-                        }
-                    }?.map { it.name }
-                    ?: emptyList()
-
-            commands.addAll(allBinFiles)
-            val sortedCommands = commands.sorted()
-
-            model.BrewPackageCommands(
-                packageName = packageName,
-                commands = sortedCommands,
-                isSuccess = true,
-                exitCode = 0,
-            )
-        } catch (e: Exception) {
-            model.BrewPackageCommands(
-                packageName = packageName,
-                commands = emptyList(),
-                isSuccess = false,
-                errorMessage = "Failed to get package commands: ${e.message}",
-            )
+        // Try to get from cache first
+        val cachedResult = cacheService.get<model.BrewPackageCommands>(cacheKey)
+        if (cachedResult != null) {
+            logger.debug("Cache hit for package commands: $packageName")
+            return cachedResult
         }
+
+        logger.debug("Cache miss for package commands: $packageName")
+
+        val result =
+            try {
+                // First check if the package is installed
+                val listResult = commandExecutor.executeBrewCommand(listOf("list", "--formula"))
+                if (!listResult.isSuccess) {
+                    model.BrewPackageCommands(
+                        packageName = packageName,
+                        commands = emptyList(),
+                        isSuccess = false,
+                        errorMessage = "Failed to check if package is installed: ${listResult.errorMessage}",
+                    )
+                } else {
+                    val installedPackages =
+                        listResult.output
+                            .lines()
+                            .filter { it.isNotBlank() }
+                            .map { it.trim() }
+
+                    if (!installedPackages.contains(packageName)) {
+                        model.BrewPackageCommands(
+                            packageName = packageName,
+                            commands = emptyList(),
+                            isSuccess = false,
+                            errorMessage = "Package '$packageName' is not installed",
+                        )
+                    } else {
+                        // Get the Homebrew prefix to find the package's bin directory
+                        val prefixResult = commandExecutor.executeBrewCommand(listOf("--prefix"))
+                        if (!prefixResult.isSuccess) {
+                            model.BrewPackageCommands(
+                                packageName = packageName,
+                                commands = emptyList(),
+                                isSuccess = false,
+                                errorMessage = "Failed to get Homebrew prefix: ${prefixResult.errorMessage}",
+                            )
+                        } else {
+                            val homebrewPrefix = prefixResult.output.trim()
+                            val packageBinDir = java.io.File("$homebrewPrefix/bin")
+
+                            if (!packageBinDir.exists()) {
+                                model.BrewPackageCommands(
+                                    packageName = packageName,
+                                    commands = emptyList(),
+                                    isSuccess = false,
+                                    errorMessage = "Package bin directory not found",
+                                )
+                            } else {
+                                // Get package info to find the actual package path
+                                val infoResult = commandExecutor.executeBrewCommand(listOf("info", packageName))
+                                if (!infoResult.isSuccess) {
+                                    model.BrewPackageCommands(
+                                        packageName = packageName,
+                                        commands = emptyList(),
+                                        isSuccess = false,
+                                        errorMessage = "Failed to get package info: ${infoResult.errorMessage}",
+                                    )
+                                } else {
+                                    // Extract the package path from brew info output
+                                    val packagePath = extractPackagePathFromInfo(infoResult.output, packageName)
+                                    if (packagePath == null) {
+                                        model.BrewPackageCommands(
+                                            packageName = packageName,
+                                            commands = emptyList(),
+                                            isSuccess = false,
+                                            errorMessage = "Could not determine package installation path",
+                                        )
+                                    } else {
+                                        // Check the package's bin directory for executable files
+                                        val packageBinPath = java.io.File("$packagePath/bin")
+                                        val commands = mutableSetOf<String>()
+
+                                        if (packageBinPath.exists() && packageBinPath.isDirectory) {
+                                            packageBinPath
+                                                .listFiles()
+                                                ?.filter { it.isFile && it.canExecute() }
+                                                ?.map { it.name }
+                                                ?.let { commands.addAll(it) }
+                                        }
+
+                                        // Also check for commands in the main bin directory that might be symlinked to this package
+                                        val allBinFiles =
+                                            packageBinDir
+                                                .listFiles()
+                                                ?.filter { it.isFile && it.canExecute() }
+                                                ?.filter { file ->
+                                                    try {
+                                                        val canonicalPath = file.canonicalPath
+                                                        canonicalPath.contains(packagePath)
+                                                    } catch (e: Exception) {
+                                                        false
+                                                    }
+                                                }?.map { it.name }
+                                                ?: emptyList()
+
+                                        commands.addAll(allBinFiles)
+                                        val sortedCommands = commands.sorted()
+
+                                        model.BrewPackageCommands(
+                                            packageName = packageName,
+                                            commands = sortedCommands,
+                                            isSuccess = true,
+                                            exitCode = 0,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                model.BrewPackageCommands(
+                    packageName = packageName,
+                    commands = emptyList(),
+                    isSuccess = false,
+                    errorMessage = "Failed to get package commands: ${e.message}",
+                )
+            }
+
+        // Cache the result with TTL
+        cacheService.set(cacheKey, result, 600) // 10 minutes TTL for package commands
+        logger.debug("Cached package commands for: $packageName")
+
+        return result
     }
 
     /**
@@ -526,48 +567,77 @@ class BrewService(
             }.sortedBy { it.name }
 
     fun getTldrInfo(command: String): TldrResult {
+        val cacheKey = "tldr_info:$command"
+        
+        // Try to get from cache first
+        val cachedResult = cacheService.get<TldrResult>(cacheKey)
+        if (cachedResult != null) {
+            logger.debug("Cache hit for tldr info: $command")
+            return cachedResult
+        }
+        
+        logger.debug("Cache miss for tldr info: $command")
         logger.info("Getting tldr info for command: $command")
 
         if (command.isBlank()) {
-            return TldrResult(
+            val result = TldrResult(
                 command = command,
                 output = "",
                 isSuccess = false,
                 errorMessage = "Command name cannot be empty",
                 exitCode = 1,
             )
+            // Cache error results too (with shorter TTL)
+            cacheService.set(cacheKey, result, 60L) // 1 minute TTL for error results
+            return result
         }
 
         // Sanitize command to prevent command injection
         val sanitizedCommand = command.trim().replace(Regex("[^a-zA-Z0-9._-]"), "")
         if (sanitizedCommand.isEmpty()) {
-            return TldrResult(
+            val result = TldrResult(
                 command = command,
                 output = "",
                 isSuccess = false,
                 errorMessage = "Invalid command name",
                 exitCode = 1,
             )
+            // Cache error results too (with shorter TTL)
+            cacheService.set(cacheKey, result, 60L) // 1 minute TTL for error results
+            return result
         }
 
         val result = commandExecutor.executeTldrCommand(sanitizedCommand, 10)
-
-        return TldrResult(
+        val tldrResult = TldrResult(
             command = sanitizedCommand,
             output = result.output,
             isSuccess = result.isSuccess,
             errorMessage = result.errorMessage,
             exitCode = result.exitCode,
         )
+        
+        // Cache the result with TTL
+        val ttl = if (tldrResult.isSuccess) 1800L else 60L // 30 minutes for success, 1 minute for errors
+        cacheService.set(cacheKey, tldrResult, ttl)
+        logger.debug("Cached tldr info for: $command (TTL: ${ttl}s)")
+        
+        return tldrResult
     }
 
     /**
      * Invalidate cache entries for a specific package
      */
     private fun invalidatePackageCache(packageName: String) {
-        val cacheKey = "package_info:$packageName"
-        cacheService.remove(cacheKey)
-        logger.debug("Invalidated cache for package: $packageName")
+        val packageInfoKey = "package_info:$packageName"
+        val packageInfoWithDepsKey = "package_info_with_deps:$packageName"
+        val packageCommandsKey = "package_commands:$packageName"
+
+        cacheService.remove(packageInfoKey)
+        cacheService.remove(packageInfoWithDepsKey)
+        cacheService.remove(packageCommandsKey)
+        logger.debug(
+            "Invalidated cache for package: $packageName (basic, with dependencies, and commands)",
+        )
     }
 
     /**
@@ -581,5 +651,63 @@ class BrewService(
     fun clearCache() {
         cacheService.clear()
         logger.info("Cleared all cache entries")
+    }
+
+    /**
+     * Pre-populate cache for a specific package
+     * This ensures the package info is immediately available after installation
+     */
+    private fun prePopulatePackageCache(packageName: String) {
+        try {
+            logger.info("Pre-populating cache for newly installed package: $packageName")
+
+            // Pre-populate basic package info
+            val basicResult = getPackageInfo(packageName)
+            if (basicResult.isSuccess) {
+                logger.debug("Successfully pre-populated basic package info for: $packageName")
+            } else {
+                logger.warn("Failed to pre-populate basic package info for: $packageName - ${basicResult.errorMessage}")
+            }
+
+            // Pre-populate package info with dependencies
+            val depsResult = getPackageInfoWithDependencies(packageName, emptyList())
+            if (depsResult.isSuccess) {
+                logger.debug("Successfully pre-populated package info with dependencies for: $packageName")
+            } else {
+                logger.warn(
+                    "Failed to pre-populate package info with dependencies for: $packageName - ${depsResult.errorMessage}",
+                )
+            }
+
+            // Pre-populate package commands
+            val commandsResult = getPackageCommands(packageName)
+            if (commandsResult.isSuccess) {
+                logger.debug("Successfully pre-populated package commands for: $packageName")
+                
+                // Pre-populate TLDR info for each command provided by the package
+                var tldrSuccessCount = 0
+                if (commandsResult.commands.isNotEmpty()) {
+                    commandsResult.commands.forEach { command ->
+                        try {
+                            val tldrResult = getTldrInfo(command)
+                            if (tldrResult.isSuccess) {
+                                tldrSuccessCount++
+                            }
+                        } catch (e: Exception) {
+                            logger.debug("Failed to pre-populate TLDR for command $command: ${e.message}")
+                        }
+                    }
+                }
+                logger.debug("Pre-populated TLDR info for $tldrSuccessCount commands from package: $packageName")
+            } else {
+                logger.warn(
+                    "Failed to pre-populate package commands for: $packageName - ${commandsResult.errorMessage}",
+                )
+            }
+
+            logger.info("Cache pre-population completed for package: $packageName")
+        } catch (e: Exception) {
+            logger.error("Error pre-populating cache for package $packageName: ${e.message}", e)
+        }
     }
 }
