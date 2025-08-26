@@ -15,7 +15,7 @@ import {
   CircularProgress,
   Chip,
 } from '@mui/material';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 function InstallModal({ open, onClose, packageName, onInstallSuccess }) {
   const [isLoading, setIsLoading] = useState(false);

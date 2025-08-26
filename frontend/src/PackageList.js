@@ -46,13 +46,17 @@ function PackageList({
     >
       {packages.map((pkg, index) => {
         // Determine if this package should be highlighted based on hover state
-        const isHighlighted = hoveredPackage && hoveredPackage !== pkg.name && packageDependencies[hoveredPackage] && (
-          packageDependencies[hoveredPackage].dependencies.includes(pkg.name) ||
-          packageDependencies[hoveredPackage].dependents.includes(pkg.name)
-        );
-        
+        const isHighlighted =
+          hoveredPackage &&
+          hoveredPackage !== pkg.name &&
+          packageDependencies[hoveredPackage] &&
+          (packageDependencies[hoveredPackage].dependencies.includes(
+            pkg.name
+          ) ||
+            packageDependencies[hoveredPackage].dependents.includes(pkg.name));
+
         const isHovered = hoveredPackage === pkg.name;
-        
+
         return (
           <Card
             key={index}
@@ -66,8 +70,12 @@ function PackageList({
               opacity: isHighlighted ? 0.3 : 1,
               transform: isHovered ? 'translateY(-2px)' : 'none',
               boxShadow: isHovered ? 3 : 1,
-              border: isHighlighted ? '2px solid #1976d2' : '2px solid transparent',
-              backgroundColor: isHighlighted ? 'rgba(25, 118, 210, 0.1)' : 'inherit',
+              border: isHighlighted
+                ? '2px solid #1976d2'
+                : '2px solid transparent',
+              backgroundColor: isHighlighted
+                ? 'rgba(25, 118, 210, 0.1)'
+                : 'inherit',
               '&:hover': {
                 transform: 'translateY(-2px)',
                 boxShadow: 3,

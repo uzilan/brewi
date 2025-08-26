@@ -102,18 +102,18 @@ function App() {
 
   const fetchPackageInfo = useCallback(async (packageName, showInUI = true) => {
     const result = await apiService.fetchPackageInfo(packageName, showInUI);
-    
+
     // Store dependency information for hover highlighting
     if (result && result.isSuccess) {
       setPackageDependencies(prev => ({
         ...prev,
         [packageName]: {
           dependencies: result.dependencies || [],
-          dependents: result.dependents || []
-        }
+          dependents: result.dependents || [],
+        },
       }));
     }
-    
+
     return result;
   }, []);
 
@@ -148,7 +148,7 @@ function App() {
     }
   };
 
-  const handlePackageHover = (packageName) => {
+  const handlePackageHover = packageName => {
     setHoveredPackage(packageName);
   };
 

@@ -16,7 +16,7 @@ import {
   Alert,
   Chip,
 } from '@mui/material';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 function DoctorModal({ open, onClose }) {
   const [isLoading, setIsLoading] = useState(false);

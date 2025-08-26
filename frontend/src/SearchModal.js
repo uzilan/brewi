@@ -12,7 +12,7 @@ import {
   Typography,
   Chip,
 } from '@mui/material';
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import InstallModal from './InstallModal';
 import PackageList from './PackageList';
@@ -71,28 +71,6 @@ function SearchModal({
   const handleInstallClick = pkg => {
     setSelectedPackage(pkg);
     setInstallModalOpen(true);
-  };
-
-  const refreshSearchResults = async () => {
-    if (!query.trim()) return;
-
-    try {
-      setSearchLoading(true);
-      setSearchError(null);
-      const response = await fetch(
-        `/api/packages/search/${encodeURIComponent(query.trim())}`
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setSearchResults(data);
-    } catch (err) {
-      setSearchError(err.message);
-      console.error('Error refreshing search results:', err);
-    } finally {
-      setSearchLoading(false);
-    }
   };
 
   const handleInstallSuccess = packageName => {
@@ -266,7 +244,7 @@ function SearchModal({
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>
                 <Typography variant='h6' color='text.secondary'>
-                  No packages found for "{query}"
+                  No packages found for &quot;{query}&quot;
                 </Typography>
               </Box>
             )}
