@@ -68,7 +68,8 @@ function PackageList({
               onMouseEnter={() => onPackageHover && onPackageHover(pkg.name)}
               onMouseLeave={() => onPackageLeave && onPackageLeave()}
               sx={{
-                height: '100%',
+                height: pkg.isInstalled ? '100%' : 'auto',
+                minHeight: pkg.isInstalled ? 'auto' : '120px',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
                 opacity: isHighlighted ? 0.3 : 1,
@@ -86,15 +87,30 @@ function PackageList({
                 },
               }}
             >
-              <CardContent sx={{ p: 1.5 }}>
+              <CardContent
+                sx={{
+                  p: 1.5,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
                 <Box
                   sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
+                    flex: 1,
                   }}
                 >
-                  <Box sx={{ flex: 1 }}>
+                  <Box
+                    sx={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minHeight: 0,
+                    }}
+                  >
                     <Box
                       sx={{
                         display: 'flex',
@@ -141,12 +157,15 @@ function PackageList({
                         color='text.secondary'
                         sx={{
                           fontSize: '0.7rem',
-                          lineHeight: 1.2,
+                          lineHeight: 1.3,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           display: '-webkit-box',
-                          WebkitLineClamp: 2,
+                          WebkitLineClamp: pkg.isInstalled ? 2 : 4,
                           WebkitBoxOrient: 'vertical',
+                          mt: 0.5,
+                          flex: pkg.isInstalled ? 'none' : 1,
+                          minHeight: pkg.isInstalled ? 'auto' : '3.2rem',
                         }}
                       >
                         {packageDescriptions[pkg.name] || pkg.description}
