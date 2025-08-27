@@ -105,7 +105,7 @@ function PackageInfoDialog({
                   size='small'
                   onClick={handleInstallClick}
                 >
-                  Install {selectedPackage?.name}
+                  Install
                 </Button>
               </Box>
             )}
