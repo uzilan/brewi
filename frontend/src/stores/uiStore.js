@@ -21,6 +21,7 @@ const useUIStore = create(set => ({
 
   // Modal States
   searchModalOpen: false,
+  searchModalWasOpen: false, // Track if search modal was open before package info
   updateUpgradeModalOpen: false,
   uninstallModalOpen: false,
   doctorModalOpen: false,
@@ -68,6 +69,7 @@ const useUIStore = create(set => ({
 
   // Actions for Modals
   setSearchModalOpen: open => set({ searchModalOpen: open }),
+  setSearchModalWasOpen: wasOpen => set({ searchModalWasOpen: wasOpen }),
   setUpdateUpgradeModalOpen: open => set({ updateUpgradeModalOpen: open }),
   setUninstallModalOpen: open => set({ uninstallModalOpen: open }),
   setDoctorModalOpen: open => set({ doctorModalOpen: open }),

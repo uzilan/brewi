@@ -52,6 +52,7 @@ function App() {
     tldrError,
     selectedPackage,
     searchModalOpen,
+    searchModalWasOpen,
     updateUpgradeModalOpen,
     uninstallModalOpen,
     doctorModalOpen,
@@ -61,6 +62,7 @@ function App() {
     snackbarSeverity,
     setSelectedPackage,
     setSearchModalOpen,
+    setSearchModalWasOpen,
     setUpdateUpgradeModalOpen,
     setUninstallModalOpen,
     setDoctorModalOpen,
@@ -265,6 +267,8 @@ function App() {
   };
 
   const handlePackageClick = pkg => {
+    // Track if search modal was open before opening package info
+    setSearchModalWasOpen(searchModalOpen);
     setSelectedPackage(pkg);
     fetchPackageInfo(pkg.name, true);
     // Also fetch package commands
@@ -312,6 +316,11 @@ function App() {
 
   const handleCloseDialog = () => {
     clearDialogState();
+    // If search modal was open before, reopen it
+    if (searchModalWasOpen) {
+      setSearchModalOpen(true);
+      setSearchModalWasOpen(false);
+    }
   };
 
   const handleOpenSearchModal = () => {
@@ -357,6 +366,10 @@ function App() {
   const handleInstallSuccess = packageName => {
     fetchPackages();
     showSnackbar(`Successfully installed ${packageName}`, 'success');
+    // Close both the package info dialog and search modal after successful installation
+    clearDialogState();
+    setSearchModalOpen(false);
+    setSearchModalWasOpen(false);
   };
 
   const handleFilterChange = value => {
@@ -521,6 +534,7 @@ function App() {
             tldrError={tldrError}
             onDependencyClick={handleDependencyClick}
             onCommandClick={handleCommandClick}
+            onInstallSuccess={handleInstallSuccess}
           />
 
           <SearchModal

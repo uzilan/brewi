@@ -130,7 +130,7 @@ function SearchModal({
 
   const handlePackageClick = pkg => {
     onPackageClick(pkg);
-    handleClose(); // Close the search modal when a package is selected
+    // Don't close the search modal - let the user return to search results
   };
 
   return (
