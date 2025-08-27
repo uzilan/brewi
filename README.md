@@ -130,16 +130,31 @@ brewi/
 ```
 
 ### API Endpoints
+
+#### Package Management
 - `GET /api/packages` - List all installed packages
 - `GET /api/packages/{name}` - Get package information
 - `GET /api/packages/{name}/commands` - Get package commands
 - `GET /api/tldr/{command}` - Get command documentation
 - `POST /api/packages/{name}/install` - Install a package
 - `DELETE /api/packages/{name}` - Uninstall a package
-- `POST /api/brew/update` - Update Homebrew
-- `POST /api/brew/upgrade` - Upgrade all packages
-- `POST /api/brew/doctor` - Run Homebrew doctor
-- `GET /api/search?q={query}` - Search for packages
+- `GET /api/packages/search/{query}` - Search for packages
+
+#### System Maintenance
+- `POST /api/packages/upgrade` - Update and upgrade all packages
+- `POST /api/packages/doctor` - Run Homebrew doctor
+- `GET /api/packages/last-update` - Get last update time
+
+#### Cache Management
+- `GET /api/cache/stats` - Get cache statistics (hit rate, total entries, etc.)
+- `DELETE /api/cache/clear` - Clear all cached data
+- `POST /api/cache/pre-populate` - Pre-populate cache with all installed packages
+- `POST /api/cache/pre-populate/limited?limit={n}` - Pre-populate cache with limited number of packages
+- `POST /api/cache/pre-populate/{packageName}` - Pre-populate cache for specific package
+
+#### Documentation
+- `GET /swagger` - Interactive API documentation (Swagger UI)
+- `GET /health` - Health check endpoint
 
 ### Key Features Implementation
 
