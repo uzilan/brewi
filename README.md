@@ -51,7 +51,6 @@ A modern web application for managing Homebrew packages on macOS. Brewi provides
 ### Prerequisites
 - macOS with Homebrew installed
 - Java 17 or later
-- Node.js 16 or later
 
 ### Installation
 
@@ -61,23 +60,15 @@ A modern web application for managing Homebrew packages on macOS. Brewi provides
    cd brewi
    ```
 
-2. **Start the backend server**
+2. **Start the application**
    ```bash
    cd backend
    ./gradlew run
    ```
-   The backend will start on `http://localhost:8080`
+   The application will start on `http://localhost:8080`
 
-3. **Start the frontend development server**
-   ```bash
-   cd frontend
-   npm install
-   npm start
-   ```
-   The frontend will start on `http://localhost:3000`
-
-4. **Open your browser**
-   Navigate to `http://localhost:3000` to start using Brewi
+3. **Open your browser**
+   Navigate to `http://localhost:8080` to start using Brewi
 
 ## Usage
 
