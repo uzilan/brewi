@@ -1,5 +1,8 @@
 package service
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import model.BrewCommandResult
 import model.BrewListResult
 import model.BrewPackage
@@ -14,6 +17,7 @@ class BrewService(
 ) {
     private val logger = LoggerFactory.getLogger(BrewService::class.java)
     private val cacheService = CacheService()
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     companion object {
         private const val PACKAGE_INFO_CACHE_TTL = 300L // 5 minutes
@@ -41,9 +45,31 @@ class BrewService(
     }
 
     /**
-     * Executes brew search command
+     * Executes brew search command and pre-populates cache with package info for found packages
      */
-    fun searchPackages(query: String): BrewCommandResult = commandExecutor.executeBrewCommand(listOf("search", query))
+    fun searchPackages(query: String): BrewCommandResult {
+        val searchResult = commandExecutor.executeBrewCommand(listOf("search", query))
+
+        // If search was successful, pre-populate cache for found packages asynchronously
+        if (searchResult.isSuccess && searchResult.output.isNotBlank()) {
+            val packageNames = parseSearchResults(searchResult.output)
+            logger.info("Found ${packageNames.size} packages in search, pre-populating cache asynchronously")
+
+            // Pre-populate cache for each package found using coroutines (non-blocking)
+            coroutineScope.launch {
+                packageNames.forEach { packageName ->
+                    try {
+                        // Use getPackageInfo which already has caching logic
+                        getPackageInfo(packageName)
+                    } catch (e: Exception) {
+                        logger.debug("Failed to pre-populate cache for package $packageName: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        return searchResult
+    }
 
     /**
      * Executes brew info command for a specific package with caching
@@ -565,6 +591,26 @@ class BrewService(
                     BrewPackage(name = trimmed)
                 }
             }.sortedBy { it.name }
+
+    /**
+     * Parse search results to extract package names
+     * Search output has sections like "==> Formulae" and "==> Casks"
+     * Package names are in a tabular format with multiple columns
+     */
+    private fun parseSearchResults(output: String): List<String> =
+        output
+            .lines()
+            .filter { it.isNotBlank() }
+            .filter { !it.startsWith("==>") } // Skip section headers
+            .filter { !it.startsWith("If you meant") } // Skip suggestion lines
+            .flatMap { line ->
+                // Split by whitespace and filter out empty strings
+                line.split(Regex("\\s+"))
+                    .filter { it.isNotBlank() }
+                    .map { it.trim() }
+            }
+            .distinct()
+            .sorted()
 
     fun getTldrInfo(command: String): TldrResult {
         val cacheKey = "tldr_info:$command"

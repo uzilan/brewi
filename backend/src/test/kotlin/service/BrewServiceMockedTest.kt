@@ -443,4 +443,64 @@ class BrewServiceMockedTest {
         val statsAfterClear = brewService.getCacheStats()
         assertThat(statsAfterClear.totalEntries).isEqualTo(0)
     }
+
+    @Test
+    fun `searchPackages should pre-populate cache for found packages`() {
+        val query = "python"
+        
+        // Clear cache before test
+        brewService.clearCache()
+        val initialStats = brewService.getCacheStats()
+        assertThat(initialStats.totalEntries).isEqualTo(0)
+
+        // Execute search - this should trigger cache pre-population
+        val searchResult = brewService.searchPackages(query)
+        
+        // Verify search was successful
+        assertThat(searchResult).isNotNull()
+        assertThat(searchResult.isSuccess).isTrue()
+        assertThat(searchResult.output).contains("python@3.12")
+        assertThat(searchResult.output).contains("python@3.13")
+
+        // Wait a bit for async cache pre-population to complete
+        Thread.sleep(100)
+
+        // Verify that cache was pre-populated with package info for found packages
+        val statsAfterSearch = brewService.getCacheStats()
+        assertThat(statsAfterSearch.totalEntries).isGreaterThan(0)
+        
+        // Verify that specific packages from search results are now cached
+        val python312Info = brewService.getPackageInfo("python@3.12")
+        assertThat(python312Info).isNotNull()
+        assertThat(python312Info.isSuccess).isTrue()
+        
+        val python313Info = brewService.getPackageInfo("python@3.13")
+        assertThat(python313Info).isNotNull()
+        assertThat(python313Info.isSuccess).isTrue()
+        
+        // Verify cache hit for the second call
+        val statsAfterInfo = brewService.getCacheStats()
+        assertThat(statsAfterInfo.hitCount).isGreaterThan(0)
+    }
+
+    @Test
+    fun `searchPackages should handle search failures gracefully`() {
+        val query = "non-existent-package"
+        
+        // Clear cache before test
+        brewService.clearCache()
+        val initialStats = brewService.getCacheStats()
+        assertThat(initialStats.totalEntries).isEqualTo(0)
+
+        // Execute search that should fail
+        val searchResult = brewService.searchPackages(query)
+        
+        // Verify search failed
+        assertThat(searchResult).isNotNull()
+        assertThat(searchResult.isSuccess).isFalse()
+        
+        // Verify cache was not pre-populated (should remain empty)
+        val statsAfterSearch = brewService.getCacheStats()
+        assertThat(statsAfterSearch.totalEntries).isEqualTo(0)
+    }
 }

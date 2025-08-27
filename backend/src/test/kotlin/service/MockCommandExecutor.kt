@@ -107,6 +107,55 @@ class MockCommandExecutor : CommandExecutor {
                         """.trimIndent(),
                     exitCode = 0,
                 ),
+            // Mock responses for packages found in search results
+            "info python@3.12" to
+                BrewCommandResult(
+                    isSuccess = true,
+                    output =
+                        """
+                        ==> python@3.12: stable 3.12.0 (bottled), HEAD
+                        Interpreted, interactive, object-oriented programming language
+                        https://www.python.org/
+                        Not installed
+                        From: https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/p/python@3.12.rb
+                        License: Python-2.0
+                        ==> Dependencies
+                        Build: pkg-config ✔
+                        Required: bzip2 ✔, libffi ✔, ncurses ✔, openssl@3 ✔, readline ✔, sqlite ✔, xz ✔, zlib ✔
+                        ==> Options
+                        --HEAD
+                                Install HEAD version
+                        ==> Analytics
+                        install: 500,000 (30 days), 1,500,000 (90 days), 5,000,000 (365 days)
+                        install-on-request: 400,000 (30 days), 1,200,000 (90 days), 4,000,000 (365 days)
+                        build-error: 2,000 (30 days)
+                        """.trimIndent(),
+                    exitCode = 0,
+                ),
+            "info python@3.13" to
+                BrewCommandResult(
+                    isSuccess = true,
+                    output =
+                        """
+                        ==> python@3.13: stable 3.13.0 (bottled), HEAD
+                        Interpreted, interactive, object-oriented programming language
+                        https://www.python.org/
+                        Not installed
+                        From: https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/p/python@3.13.rb
+                        License: Python-2.0
+                        ==> Dependencies
+                        Build: pkg-config ✔
+                        Required: bzip2 ✔, libffi ✔, ncurses ✔, openssl@3 ✔, readline ✔, sqlite ✔, xz ✔, zlib ✔
+                        ==> Options
+                        --HEAD
+                                Install HEAD version
+                        ==> Analytics
+                        install: 300,000 (30 days), 900,000 (90 days), 3,000,000 (365 days)
+                        install-on-request: 250,000 (30 days), 750,000 (90 days), 2,500,000 (365 days)
+                        build-error: 1,500 (30 days)
+                        """.trimIndent(),
+                    exitCode = 0,
+                ),
             // Dependencies
             "deps node" to
                 BrewCommandResult(
@@ -143,6 +192,19 @@ class MockCommandExecutor : CommandExecutor {
                 ),
             // Dependents
             "uses openssl@3" to
+                BrewCommandResult(
+                    isSuccess = true,
+                    output =
+                        """
+                        node
+                        python
+                        git
+                        curl
+                        wget
+                        """.trimIndent(),
+                    exitCode = 0,
+                ),
+            "uses --installed openssl@3" to
                 BrewCommandResult(
                     isSuccess = true,
                     output =
