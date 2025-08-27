@@ -95,81 +95,37 @@ function PackageList({
                   flexDirection: 'column',
                 }}
               >
+                {/* Top row: Name and Button/Status */}
                 <Box
                   sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    flex: 1,
+                    alignItems: 'center',
+                    mb: 0.5,
                   }}
                 >
                   <Box
                     sx={{
-                      flex: 1,
                       display: 'flex',
-                      flexDirection: 'column',
-                      minHeight: 0,
+                      alignItems: 'center',
+                      gap: 1,
                     }}
                   >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        mb: 0.5,
-                      }}
+                    <Typography
+                      variant='subtitle1'
+                      component='h3'
+                      sx={{ fontSize: '0.9rem', fontWeight: 'bold' }}
                     >
-                      <Typography
-                        variant='subtitle1'
-                        component='h3'
-                        sx={{ fontSize: '0.9rem', fontWeight: 'bold' }}
-                      >
-                        {pkg.name}
-                      </Typography>
-                      {pkg.isInstalled && (
-                        <Chip
-                          label='Installed'
-                          size='small'
-                          color='success'
-                          icon={<CheckCircleIcon />}
-                          sx={{ fontSize: '0.7rem', height: 18 }}
-                        />
-                      )}
-                    </Box>
-
-                    {pkg.version && (
-                      <Typography
-                        variant='caption'
-                        color='text.secondary'
-                        sx={{
-                          fontWeight: 'bold',
-                          fontSize: '0.7rem',
-                          mb: 0.5,
-                          display: 'block',
-                        }}
-                      >
-                        Version: {pkg.version}
-                      </Typography>
-                    )}
-                    {(packageDescriptions[pkg.name] || pkg.description) && (
-                      <Typography
-                        variant='caption'
-                        color='text.secondary'
-                        sx={{
-                          fontSize: '0.7rem',
-                          lineHeight: 1.3,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: pkg.isInstalled ? 2 : 4,
-                          WebkitBoxOrient: 'vertical',
-                          mt: 0.5,
-                          flex: pkg.isInstalled ? 'none' : 1,
-                          minHeight: pkg.isInstalled ? 'auto' : '3.2rem',
-                        }}
-                      >
-                        {packageDescriptions[pkg.name] || pkg.description}
-                      </Typography>
+                      {pkg.name}
+                    </Typography>
+                    {pkg.isInstalled && (
+                      <Chip
+                        label='Installed'
+                        size='small'
+                        color='success'
+                        icon={<CheckCircleIcon />}
+                        sx={{ fontSize: '0.7rem', height: 18 }}
+                      />
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1 }}>
@@ -210,6 +166,43 @@ function PackageList({
                     )}
                   </Box>
                 </Box>
+
+                {/* Version info */}
+                {pkg.version && (
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
+                    sx={{
+                      fontWeight: 'bold',
+                      fontSize: '0.7rem',
+                      mb: 0.5,
+                      display: 'block',
+                    }}
+                  >
+                    Version: {pkg.version}
+                  </Typography>
+                )}
+
+                {/* Description - full width below name and button */}
+                {(packageDescriptions[pkg.name] || pkg.description) && (
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
+                    sx={{
+                      fontSize: '0.7rem',
+                      lineHeight: 1.3,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: pkg.isInstalled ? 2 : 4,
+                      WebkitBoxOrient: 'vertical',
+                      flex: pkg.isInstalled ? 'none' : 1,
+                      minHeight: pkg.isInstalled ? 'auto' : '3.2rem',
+                    }}
+                  >
+                    {packageDescriptions[pkg.name] || pkg.description}
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           );
