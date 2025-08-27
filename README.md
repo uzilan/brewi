@@ -2,6 +2,8 @@
 
 A modern web application for managing Homebrew packages on macOS. Brewi provides an intuitive interface for viewing, searching, installing, and managing your Homebrew packages with real-time information and documentation.
 
+![Brewi Screenshot](screenshot.png)
+
 ## Features
 
 ### 📦 Package Management
