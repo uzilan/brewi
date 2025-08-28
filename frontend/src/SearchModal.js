@@ -58,18 +58,24 @@ function SearchModal({
       }
       const data = await response.json();
       setSearchResults(data);
-      
+
       // Fetch package info for non-installed packages in search results
       if (data && data.isSuccess && data.output) {
         const packageNames = data.output
           .split('\n')
           .filter(line => line.trim())
           .map(name => name.trim());
-        
+
         // Fetch package info for non-installed packages
         packageNames.forEach(packageName => {
-          const isInstalled = installedPackages.some(pkg => pkg.name === packageName);
-          if (!isInstalled && !packageInfoMap[packageName] && !packageInfoLoading[packageName]) {
+          const isInstalled = installedPackages.some(
+            pkg => pkg.name === packageName
+          );
+          if (
+            !isInstalled &&
+            !packageInfoMap[packageName] &&
+            !packageInfoLoading[packageName]
+          ) {
             fetchPackageInfo(packageName);
           }
         });
@@ -96,7 +102,7 @@ function SearchModal({
     setInstallModalOpen(true);
   };
 
-  const fetchPackageInfo = async (packageName) => {
+  const fetchPackageInfo = async packageName => {
     if (packageInfoLoading[packageName] || packageInfoMap[packageName]) {
       return; // Already loading or loaded
     }
@@ -111,9 +117,10 @@ function SearchModal({
           setPackageInfoMap(prev => ({
             ...prev,
             [packageName]: {
-              description: data.description || data.output?.split('\n')[1] || '',
-              output: data.output || ''
-            }
+              description:
+                data.description || data.output?.split('\n')[1] || '',
+              output: data.output || '',
+            },
           }));
         }
       }
@@ -169,7 +176,7 @@ function SearchModal({
         const packageName = name.trim();
         const isInstalled = installedPackageNames.includes(packageName);
         const packageInfo = packageInfoMap[packageName];
-        
+
         return {
           name: packageName,
           version: null,

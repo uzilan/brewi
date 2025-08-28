@@ -63,7 +63,7 @@ function PackageList({
 
           return (
             <Card
-              key={index}
+              key={pkg.name}
               onClick={() => onPackageClick(pkg)}
               onMouseEnter={() => onPackageHover && onPackageHover(pkg.name)}
               onMouseLeave={() => onPackageLeave && onPackageLeave()}

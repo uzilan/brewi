@@ -237,9 +237,9 @@ function PackageInfoDialog({
                 {packageInfo.dependencies &&
                 packageInfo.dependencies.length > 0 ? (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {packageInfo.dependencies.map((dep, index) => (
+                    {packageInfo.dependencies.map(dep => (
                       <Chip
-                        key={index}
+                        key={dep}
                         label={dep}
                         size='small'
                         variant='outlined'
@@ -276,9 +276,9 @@ function PackageInfoDialog({
                 <Divider sx={{ mb: 2 }} />
                 {packageInfo.dependents && packageInfo.dependents.length > 0 ? (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {packageInfo.dependents.map((dep, index) => (
+                    {packageInfo.dependents.map(dep => (
                       <Chip
-                        key={index}
+                        key={dep}
                         label={dep}
                         size='small'
                         variant='outlined'
@@ -327,9 +327,9 @@ function PackageInfoDialog({
                   packageCommands.commands &&
                   packageCommands.commands.length > 0 ? (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {packageCommands.commands.map((command, index) => (
+                    {packageCommands.commands.map(command => (
                       <Tooltip
-                        key={index}
+                        key={command}
                         title={`Click to see documentation for ${command}`}
                         arrow
                       >

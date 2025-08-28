@@ -59,9 +59,9 @@ function DoctorModal({ open, onClose }) {
   const formatOutput = output => {
     if (!output) return 'No output available';
 
-    return output.split('\n').map((line, index) => (
+    return output.split('\n').map(line => (
       <Typography
-        key={index}
+        key={line}
         variant='body2'
         component='div'
         sx={{
